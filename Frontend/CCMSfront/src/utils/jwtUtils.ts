@@ -41,45 +41,6 @@ export const isTokenValid = (token: string): boolean => {
 };
 
 /**
- * 获取token的过期时间戳
- * @param token JWT token字符串
- * @returns number | null - 过期时间戳，如果token无效则返回null
- */
-export const getTokenExpiry = (token: string): number | null => {
-  const payload = parseJwt(token);
-  if (!payload || !payload.exp) return null;
-  
-  // 返回毫秒级时间戳
-  return payload.exp * 1000;
-};
-
-/**
- * 获取token中的用户ID
- * @param token JWT token字符串
- * @returns string | number | null - 用户ID，如果不存在则返回null
- */
-export const getUserIdFromToken = (token: string): string | number | null => {
-  const payload = parseJwt(token);
-  if (!payload) return null;
-  
-  // 通常用户ID可能在sub、userId、user_id、id等字段中
-  return payload.sub || payload.userId || payload.user_id || payload.id || null;
-};
-
-/**
- * 获取token中的用户角色信息
- * @param token JWT token字符串
- * @returns string[] | string | null - 用户角色，如果不存在则返回null
- */
-export const getUserRolesFromToken = (token: string): string[] | string | null => {
-  const payload = parseJwt(token);
-  if (!payload) return null;
-  
-  // 通常角色信息可能在role、roles、authorities等字段中
-  return payload.role || payload.roles || payload.authorities || null;
-};
-
-/**
  * 从localStorage获取当前的access token
  * @returns string | null - access token
  */
@@ -88,45 +49,58 @@ export const getAccessToken = (): string | null => {
 };
 
 /**
- * 从localStorage获取当前的refresh token
- * @returns string | null - refresh token
- */
-export const getRefreshToken = (): string | null => {
-  return localStorage.getItem('refreshToken');
-};
-
-/**
- * 清除localStorage中的所有token相关信息
+ * 清除localStorage中的所有认证相关信息
  */
 export const clearTokens = (): void => {
   localStorage.removeItem('accessToken');
-  localStorage.removeItem('refreshToken');
+  localStorage.removeItem('userId');
+  localStorage.removeItem('username');
+  localStorage.removeItem('role');
+  localStorage.removeItem('userInfo');
   localStorage.removeItem('tokenExpiry');
 };
 
 /**
- * 存储token相关信息到localStorage
- * @param accessToken JWT access token
- * @param refreshToken JWT refresh token
- * @param expiresIn token有效期（秒）
- */
-export const storeTokens = (accessToken: string, refreshToken: string, expiresIn: number): void => {
-  localStorage.setItem('accessToken', accessToken);
-  localStorage.setItem('refreshToken', refreshToken);
-  localStorage.setItem('tokenExpiry', (Date.now() + expiresIn * 1000).toString());
-};
-
-/**
- * 检查token是否需要刷新（提前5分钟）
+ * 检查token是否需要刷新
  * @returns boolean - 是否需要刷新token
  */
 export const shouldRefreshToken = (): boolean => {
-  const expiryStr = localStorage.getItem('tokenExpiry');
-  if (!expiryStr) return true;
+  const token = getAccessToken();
+  // 如果没有token或者token无效，需要刷新
+  if (!token || !isTokenValid(token)) {
+    return true;
+  }
   
-  const expiryTime = parseInt(expiryStr, 10);
-  // 提前5分钟刷新token
-  const threshold = Date.now() + 5 * 60 * 1000;
+  // 尝试通过解析token检查是否即将过期
+  const payload = parseJwt(token);
+  if (payload && payload.exp) {
+    // 提前5分钟刷新token
+    const now = Date.now() / 1000;
+    const threshold = payload.exp - 5 * 60; // 提前5分钟
+    return now > threshold;
+  }
   
-  return expiryTime < threshold;
+  return false;
+};
+
+/**
+ * 从localStorage获取当前用户信息
+ * @returns any | null - 用户信息对象
+ */
+export const getUserInfo = (): any | null => {
+  try {
+    const userInfoStr = localStorage.getItem('userInfo');
+    return userInfoStr ? JSON.parse(userInfoStr) : null;
+  } catch (error) {
+    console.error('Failed to get user info:', error);
+    return null;
+  }
+};
+
+/**
+ * 获取当前用户的角色
+ * @returns string | null - 用户角色
+ */
+export const getUserRole = (): string | null => {
+  return localStorage.getItem('role') || getUserInfo()?.role || null;
 };

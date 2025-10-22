@@ -21,7 +21,7 @@ declare global {
 }
 
 // 配置是否使用mock数据
-const USE_MOCK = true // 设为true使用mock数据，false使用真实API
+const USE_MOCK = false // 设为true使用mock数据，false使用真实API
 
 // 创建axios实例
 const axiosInstance: AxiosInstance = axios.create({
@@ -42,32 +42,35 @@ let isRefreshing = false
 let refreshSubscribers: Array<(token: string) => void> = []
 
 const refreshToken = async (): Promise<string> => {
-  const refreshTokenValue = getRefreshToken()
-  if (!refreshTokenValue) {
+  const accessToken = localStorage.getItem('accessToken')
+  if (!accessToken) {
     logout()
-    throw new Error('No refresh token available')
+    throw new Error('No access token available')
   }
 
   try {
     // 不使用axiosInstance避免递归调用拦截器
     const response = await axios.post(
       authApi.refreshToken,
-      { refreshToken: refreshTokenValue },
+      {},
       {
-        baseURL: import.meta.env.VITE_API_BASE_URL || '/api'
+        baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
+        params: {
+          oldToken: accessToken
+        }
       }
     )
 
-    const { accessToken, refreshToken: newRefreshToken, expiresIn } = response.data
+    const newToken = response.data
     
-    if (!accessToken || !newRefreshToken || !expiresIn) {
+    if (!newToken || typeof newToken !== 'string') {
       throw new Error('Invalid token response')
     }
     
     // 存储新token
-    storeTokens(accessToken, newRefreshToken, expiresIn)
+    localStorage.setItem('accessToken', newToken)
     
-    return accessToken
+    return newToken
   } catch (error) {
     console.error('Token refresh failed:', error)
     logout()
@@ -77,7 +80,12 @@ const refreshToken = async (): Promise<string> => {
 
 // 登出函数
 const logout = (): void => {
-  clearTokens()
+  // 清除所有本地存储的认证信息
+  localStorage.removeItem('accessToken')
+  localStorage.removeItem('userId')
+  localStorage.removeItem('username')
+  localStorage.removeItem('role')
+  localStorage.removeItem('userInfo')
   window.location.href = '/login'
 }
 
@@ -157,12 +165,19 @@ axiosInstance.interceptors.response.use(
   (response: AxiosResponse) => {
     // 如果是登录响应，存储token相关信息
     if (response.config.url?.includes('/auth/login') || response.config.url?.includes('/auth/login/code')) {
-      // 适配mock和真实API的不同响应格式
-      const tokenData = response.data.data || response.data;
-      const { accessToken, refreshToken, expiresIn } = tokenData;
-      if (accessToken && refreshToken && expiresIn) {
-        storeTokens(accessToken, refreshToken, expiresIn);
-        console.log('Token stored successfully:', { accessToken, refreshToken });
+      // 适配后端API的响应格式
+      const tokenData = response.data;
+      if (tokenData.token) {
+        localStorage.setItem('accessToken', tokenData.token);
+        localStorage.setItem('userId', tokenData.userId?.toString() || '');
+        localStorage.setItem('username', tokenData.username || '');
+        localStorage.setItem('role', tokenData.role || '');
+        localStorage.setItem('userInfo', JSON.stringify({
+          userId: tokenData.userId,
+          username: tokenData.username,
+          role: tokenData.role
+        }));
+        console.log('Token stored successfully:', { token: tokenData.token, username: tokenData.username });
       }
     }
     return response;
@@ -443,19 +458,19 @@ if (USE_MOCK) {
   axiosInstance.interceptors.request.use(mockRequest)
 } else {
   // 真实API的请求拦截器
-  axiosInstance.interceptors.request.use(
-    (config: InternalAxiosRequestConfig) => {
-      // 在发送请求之前做些什么
-      const token = getAccessToken()
-      if (token && config.headers) {
-        config.headers.Authorization = `Bearer ${token}`
-      }
-      return config
-    },
-    (error: AxiosError) => {
-      return Promise.reject(error)
-    }
-  )
+      axiosInstance.interceptors.request.use(
+        (config: InternalAxiosRequestConfig) => {
+          // 在发送请求之前做些什么
+          const token = localStorage.getItem('accessToken')
+          if (token && config.headers) {
+            config.headers.Authorization = `Bearer ${token}`
+          }
+          return config
+        },
+        (error: AxiosError) => {
+          throw error
+        }
+      )
 }
 
 export default axiosInstance

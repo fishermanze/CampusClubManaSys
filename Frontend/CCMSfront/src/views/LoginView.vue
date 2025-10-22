@@ -46,62 +46,11 @@
             <input type="checkbox" v-model="loginForm.rememberMe" class="mr-2" />
             <span>记住我</span>
           </label>
-          <a href="#" @click.prevent="switchTo('forgotPassword')">忘记密码？</a>
         </div>
 
         <div class="form-switch">
           <span>还没有账号？</span>
           <a href="#" @click.prevent="switchTo('register')">立即注册</a>
-        </div>
-        <div class="form-switch">
-          <span>使用手机号登录？</span>
-          <a href="#" @click.prevent="switchTo('codeLogin')">验证码登录</a>
-        </div>
-      </form>
-
-      <!-- 手机号验证码登录表单 -->
-      <form v-else-if="currentForm === 'codeLogin'" @submit.prevent="handleCodeLogin">
-        <div class="form-group">
-          <div class="form-input">
-            <i class="fa fa-mobile"></i>
-            <input
-              type="tel"
-              v-model="codeLoginForm.phone"
-              placeholder="手机号"
-              required
-              class="form-control"
-            />
-          </div>
-        </div>
-
-        <div class="form-group">
-          <div class="form-input flex gap-2">
-            <i class="fa fa-shield"></i>
-            <input
-              type="text"
-              v-model="codeLoginForm.verificationCode"
-              placeholder="验证码"
-              required
-              class="form-control flex-1"
-            />
-            <button
-              type="button"
-              class="btn btn-secondary btn-sm"
-              :disabled="countdown > 0"
-              @click="sendVerificationCode('login')"
-            >
-              {{ countdown > 0 ? `${countdown}秒后重试` : "获取验证码" }}
-            </button>
-          </div>
-        </div>
-
-        <button type="submit" class="login-btn">
-          <i class="fa fa-sign-in mr-2"></i> 登录
-        </button>
-
-        <div class="form-switch">
-          <span>使用账号密码登录？</span>
-          <a href="#" @click.prevent="switchTo('passwordLogin')">密码登录</a>
         </div>
       </form>
 
@@ -135,35 +84,14 @@
 
         <div class="form-group">
           <div class="form-input">
-            <i class="fa fa-mobile"></i>
+            <i class="fa fa-id-card-o"></i>
             <input
-              type="tel"
-              v-model="registerForm.phone"
-              placeholder="手机号"
+              type="text"
+              v-model="registerForm.uid"
+              placeholder="校园统一标识"
               required
               class="form-control"
             />
-          </div>
-        </div>
-
-        <div class="form-group">
-          <div class="form-input flex gap-2">
-            <i class="fa fa-shield"></i>
-            <input
-              type="text"
-              v-model="registerForm.verificationCode"
-              placeholder="验证码"
-              required
-              class="form-control flex-1"
-            />
-            <button
-              type="button"
-              class="btn btn-secondary btn-sm"
-              :disabled="countdown > 0"
-              @click="sendVerificationCode('register')"
-            >
-              {{ countdown > 0 ? `${countdown}秒后重试` : "获取验证码" }}
-            </button>
           </div>
         </div>
 
@@ -202,81 +130,6 @@
           <a href="#" @click.prevent="switchTo('passwordLogin')">返回登录</a>
         </div>
       </form>
-
-      <!-- 忘记密码表单 -->
-      <form
-        v-else-if="currentForm === 'forgotPassword'"
-        @submit.prevent="handleForgotPassword"
-      >
-        <div class="form-group">
-          <div class="form-input">
-            <i class="fa fa-mobile"></i>
-            <input
-              type="tel"
-              v-model="forgotPasswordForm.phone"
-              placeholder="手机号"
-              required
-              class="form-control"
-            />
-          </div>
-        </div>
-
-        <div class="form-group">
-          <div class="form-input flex gap-2">
-            <i class="fa fa-shield"></i>
-            <input
-              type="text"
-              v-model="forgotPasswordForm.verificationCode"
-              placeholder="验证码"
-              required
-              class="form-control flex-1"
-            />
-            <button
-              type="button"
-              class="btn btn-secondary btn-sm"
-              :disabled="countdown > 0"
-              @click="sendVerificationCode('forgot')"
-            >
-              {{ countdown > 0 ? `${countdown}秒后重试` : "获取验证码" }}
-            </button>
-          </div>
-        </div>
-
-        <div class="form-group">
-          <div class="form-input">
-            <i class="fa fa-lock"></i>
-            <input
-              type="password"
-              v-model="forgotPasswordForm.newPassword"
-              placeholder="新密码"
-              required
-              class="form-control"
-            />
-          </div>
-        </div>
-
-        <div class="form-group">
-          <div class="form-input">
-            <i class="fa fa-lock"></i>
-            <input
-              type="password"
-              v-model="forgotPasswordForm.confirmPassword"
-              placeholder="确认新密码"
-              required
-              class="form-control"
-            />
-          </div>
-        </div>
-
-        <button type="submit" class="login-btn">
-          <i class="fa fa-key mr-2"></i> 重置密码
-        </button>
-
-        <div class="form-switch">
-          <span>返回登录？</span>
-          <a href="#" @click.prevent="switchTo('passwordLogin')">登录</a>
-        </div>
-      </form>
     </div>
   </div>
 
@@ -289,46 +142,27 @@
 <script setup lang="ts">
 import { ref, computed } from "vue";
 import { useRouter } from "vue-router";
-import type { LoginForm, CodeLoginForm, RegisterForm, ForgotPasswordForm } from "@/types";
 import { authApi } from "@/api/apiService";
 
 const router = useRouter();
 
-// 当前表单类型
-const currentForm = ref<"passwordLogin" | "codeLogin" | "register" | "forgotPassword">(
-  "passwordLogin"
-);
+// 当前表单类型（只保留登录和注册）
+const currentForm = ref<"passwordLogin" | "register">("passwordLogin");
 
 // 表单数据
-const loginForm = ref<LoginForm>({
+const loginForm = ref({
   username: "",
   password: "",
   rememberMe: false,
 });
 
-const codeLoginForm = ref<CodeLoginForm>({
-  phone: "",
-  verificationCode: "",
-});
-
-const registerForm = ref<RegisterForm>({
+const registerForm = ref({
   username: "",
   password: "",
   confirmPassword: "",
   realName: "",
-  phone: "",
-  verificationCode: "",
+  uid: "", // 校园统一标识
 });
-
-const forgotPasswordForm = ref<ForgotPasswordForm>({
-  phone: "",
-  verificationCode: "",
-  newPassword: "",
-  confirmPassword: "",
-});
-
-// 验证码倒计时
-const countdown = ref(0);
 
 // 通知
 const notification = ref({
@@ -342,12 +176,8 @@ const currentFormTitle = computed(() => {
   switch (currentForm.value) {
     case "passwordLogin":
       return "请登录您的账号";
-    case "codeLogin":
-      return "请使用手机号登录";
     case "register":
       return "请注册账号";
-    case "forgotPassword":
-      return "重置您的密码";
     default:
       return "校园社团管理系统";
   }
@@ -374,50 +204,6 @@ const showNotification = (
   }, 3000);
 };
 
-// 发送验证码
-const sendVerificationCode = async (type: "login" | "register" | "forgot") => {
-  let phone = "";
-
-  switch (type) {
-    case "login":
-      phone = codeLoginForm.value.phone;
-      break;
-    case "register":
-      phone = registerForm.value.phone;
-      break;
-    case "forgot":
-      phone = forgotPasswordForm.value.phone;
-      break;
-  }
-
-  if (!phone) {
-    showNotification("请输入手机号", "error");
-    return;
-  }
-
-  if (!/^1[3-9]\d{9}$/.test(phone)) {
-    showNotification("请输入正确的手机号", "error");
-    return;
-  }
-
-  try {
-    // 调用API发送验证码
-    await authApi.sendVerificationCode(phone, type);
-    showNotification("验证码已发送", "success");
-
-    // 开始倒计时
-    countdown.value = 60;
-    const timer = setInterval(() => {
-      countdown.value--;
-      if (countdown.value <= 0) {
-        clearInterval(timer);
-      }
-    }, 1000);
-  } catch (error) {
-    showNotification("验证码发送失败，请稍后重试", "error");
-  }
-};
-
 // 处理账号密码登录
 const handlePasswordLogin = async () => {
   if (!loginForm.value.username || !loginForm.value.password) {
@@ -427,14 +213,7 @@ const handlePasswordLogin = async () => {
 
   try {
     // 调用登录API
-    const response = await authApi.login(loginForm.value);
-
-    // 确保响应数据格式正确
-    const responseData = response.data || response;
-    if (!responseData.accessToken) {
-      showNotification("登录响应格式错误", "error");
-      return;
-    }
+    await authApi.login(loginForm.value);
 
     // 记住用户名
     if (loginForm.value.rememberMe) {
@@ -445,45 +224,16 @@ const handlePasswordLogin = async () => {
 
     showNotification("登录成功", "success");
 
-    // 确认token已保存
+    // 确认token已保存并跳转到首页
     setTimeout(() => {
       const token = localStorage.getItem("accessToken");
       console.log("Token saved:", !!token);
       console.log("Navigating to /home");
-      // 尝试使用replace方法避免可能的历史记录问题
+      // 跳转到首页
       router.replace("/home");
-    }, 1000);
+    }, 500);
   } catch (error) {
     showNotification("登录失败，请检查用户名和密码", "error");
-  }
-};
-
-// 处理验证码登录
-const handleCodeLogin = async () => {
-  if (!codeLoginForm.value.phone || !codeLoginForm.value.verificationCode) {
-    showNotification("手机号和验证码不能为空", "error");
-    return;
-  }
-
-  try {
-    // 调用验证码登录API
-    await authApi.loginByCode(codeLoginForm.value);
-
-    // 保存token到localStorage（实际在apiService中已处理）
-    // token存储逻辑已在apiService中统一处理
-
-    showNotification("登录成功", "success");
-
-    // 确认token已保存
-    setTimeout(() => {
-      const token = localStorage.getItem("accessToken");
-      console.log("Token saved:", !!token);
-      console.log("Navigating to /home");
-      // 尝试使用replace方法避免可能的历史记录问题
-      router.replace("/home");
-    }, 1000);
-  } catch (error) {
-    showNotification("登录失败，请检查验证码是否正确", "error");
   }
 };
 
@@ -493,9 +243,8 @@ const handleRegister = async () => {
   if (
     !registerForm.value.username ||
     !registerForm.value.realName ||
-    !registerForm.value.phone ||
-    !registerForm.value.password ||
-    !registerForm.value.verificationCode
+    !registerForm.value.uid ||
+    !registerForm.value.password
   ) {
     showNotification("请填写完整的注册信息", "error");
     return;
@@ -507,8 +256,16 @@ const handleRegister = async () => {
   }
 
   try {
+    // 准备注册数据，只包含后端需要的字段
+    const registerData = {
+      username: registerForm.value.username,
+      password: registerForm.value.password,
+      uid: registerForm.value.uid,
+      realName: registerForm.value.realName,
+    };
+
     // 调用注册API
-    await authApi.register(registerForm.value);
+    await authApi.register(registerData);
 
     showNotification("注册成功，请登录", "success");
 
@@ -518,38 +275,6 @@ const handleRegister = async () => {
     }, 1000);
   } catch (error) {
     showNotification("注册失败，请稍后重试", "error");
-  }
-};
-
-// 处理忘记密码
-const handleForgotPassword = async () => {
-  // 验证表单
-  if (
-    !forgotPasswordForm.value.phone ||
-    !forgotPasswordForm.value.verificationCode ||
-    !forgotPasswordForm.value.newPassword
-  ) {
-    showNotification("请填写完整信息", "error");
-    return;
-  }
-
-  if (forgotPasswordForm.value.newPassword !== forgotPasswordForm.value.confirmPassword) {
-    showNotification("两次输入的密码不一致", "error");
-    return;
-  }
-
-  try {
-    // 调用重置密码API
-    await authApi.resetPassword(forgotPasswordForm.value);
-
-    showNotification("密码重置成功，请使用新密码登录", "success");
-
-    // 切换到登录表单
-    setTimeout(() => {
-      switchTo("passwordLogin");
-    }, 1000);
-  } catch (error) {
-    showNotification("密码重置失败，请稍后重试", "error");
   }
 };
 

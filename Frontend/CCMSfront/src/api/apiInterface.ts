@@ -3,99 +3,99 @@
 // 用户相关接口
 export const authApi = {
   // 用户登录
-  login: '/api/auth/login',
+  login: '/auth/login',
   // 用户登出
-  logout: '/api/auth/logout',
+  logout: '/auth/logout',
   // 获取当前用户信息
-  getCurrentUser: '/api/auth/current-user',
+  getCurrentUser: '/auth/current-user',
   // 用户注册
-  register: '/api/auth/register',
+  register: '/auth/register',
   // 修改密码
-  changePassword: '/api/auth/change-password',
+  changePassword: '/auth/change-password',
   // 更新用户信息
-  updateProfile: '/api/auth/profile/update',
+  updateProfile: '/auth/profile/update',
   // 用户上传头像
-  uploadAvatar: '/api/auth/avatar/upload',
+  uploadAvatar: '/auth/avatar/upload',
   // 刷新Token
-  refreshToken: '/api/auth/refresh-token',
+  refreshToken: '/auth/refresh',
   // 验证码登录
-  loginByCode: '/api/auth/login/code',
+  loginByCode: '/auth/login/code',
   // 发送验证码
-  sendVerificationCode: '/api/auth/send-code',
+  sendVerificationCode: '/auth/send-code',
   // 重置密码
-  resetPassword: '/api/auth/reset-password'
+  resetPassword: '/auth/reset-password'
 };
 
 // 社团相关接口
 export const clubApi = {
   // 获取社团列表
-  getClubs: '/api/clubs',
+  getClubs: '/clubs',
   // 获取社团详情
-  getClubById: (id: number) => `/api/clubs/${id}`,
+  getClubById: (id: number) => `/clubs/${id}`,
   // 创建社团
-  createClub: '/api/clubs',
+  createClub: '/clubs',
   // 更新社团信息
-  updateClub: (id: number) => `/api/clubs/${id}`,
+  updateClub: (id: number) => `/clubs/${id}`,
   // 删除社团
-  deleteClub: (id: number) => `/api/clubs/${id}`,
+  deleteClub: (id: number) => `/clubs/${id}`,
   // 加入社团
-  joinClub: (id: number) => `/api/clubs/${id}/join`,
+  joinClub: (id: number) => `/clubs/${id}/join`,
   // 退出社团
-  leaveClub: (id: number) => `/api/clubs/${id}/leave`,
+  leaveClub: (id: number) => `/clubs/${id}/leave`,
   // 获取用户加入的社团
-  getUserClubs: '/api/clubs/user',
+  getUserClubs: '/clubs/user',
   // 搜索社团
-  searchClubs: '/api/clubs/search',
+  searchClubs: '/clubs/search',
   // 获取热门社团
-  getPopularClubs: '/api/clubs/popular',
+  getPopularClubs: '/clubs/popular',
   // 获取新创建社团
-  getNewClubs: '/api/clubs/new'
+  getNewClubs: '/clubs/new'
 };
 
 // 活动相关接口
 export const activityApi = {
   // 获取活动列表
-  getActivities: '/api/activities',
+  getActivities: '/activities',
   // 获取活动详情
-  getActivityById: (id: number) => `/api/activities/${id}`,
+  getActivityById: (id: number) => `/activities/${id}`,
   // 创建活动
-  createActivity: '/api/activities',
+  createActivity: '/activities',
   // 更新活动信息
-  updateActivity: (id: number) => `/api/activities/${id}`,
+  updateActivity: (id: number) => `/activities/${id}`,
   // 删除活动
-  deleteActivity: (id: number) => `/api/activities/${id}`,
+  deleteActivity: (id: number) => `/activities/${id}`,
   // 报名参加活动
-  joinActivity: (id: number) => `/api/activities/${id}/join`,
+  joinActivity: (id: number) => `/activities/${id}/join`,
   // 取消活动报名
-  cancelJoinActivity: (id: number) => `/api/activities/${id}/cancel`,
+  cancelJoinActivity: (id: number) => `/activities/${id}/cancel`,
   // 获取用户参加的活动
-  getUserActivities: '/api/activities/user',
+  getUserActivities: '/activities/user',
   // 获取社团的活动
-  getClubActivities: (clubId: number) => `/api/clubs/${clubId}/activities`,
+  getClubActivities: (clubId: number) => `/clubs/${clubId}/activities`,
   // 搜索活动
-  searchActivities: '/api/activities/search',
+  searchActivities: '/activities/search',
   // 获取即将开始的活动
-  getUpcomingActivities: '/api/activities/upcoming',
+  getUpcomingActivities: '/activities/upcoming',
   // 获取热门活动
-  getPopularActivities: '/api/activities/popular'
+  getPopularActivities: '/activities/popular'
 };
 
 // 统计相关接口
 export const statsApi = {
   // 获取用户统计信息
-  getUserStats: '/api/stats/user',
+  getUserStats: '/stats/user',
   // 获取活动统计信息
-  getActivityStats: '/api/stats/activities',
+  getActivityStats: '/stats/activities',
   // 获取社团统计信息
-  getClubStats: '/api/stats/clubs',
+  getClubStats: '/stats/clubs',
   // 获取整体平台统计信息
-  getOverallStats: '/api/stats/overall',
+  getOverallStats: '/stats/overall',
   // 获取活跃度统计
-  getActivityTrend: '/api/stats/trends/activity',
+  getActivityTrend: '/stats/trends/activity',
   // 获取用户增长统计
-  getUserGrowth: '/api/stats/trends/users',
+  getUserGrowth: '/stats/trends/users',
   // 获取分类统计
-  getCategoryStats: '/api/stats/categories'
+  getCategoryStats: '/stats/categories'
 };
 
 // 收藏相关接口
