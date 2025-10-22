@@ -1,0 +1,17 @@
+/// <reference types="vite/client" />
+
+declare module '*.vue' {
+  import type { DefineComponent } from 'vue'
+  const component: DefineComponent<{}, {}, any>
+  export default component
+}
+
+declare module '*.css' {
+  const content: any
+  export default content
+}
+
+declare module '@fortawesome/fontawesome-free/css/all.min.css' {
+  const content: any
+  export default content
+}
