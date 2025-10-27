@@ -62,6 +62,7 @@ export interface RegisterForm {
   password: string
   confirmPassword: string
   realName: string
+  uid:string
   phone: string
   verificationCode: string
 }

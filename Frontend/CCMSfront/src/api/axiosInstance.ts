@@ -1,14 +1,11 @@
 import axios from 'axios'
 import type { AxiosInstance, InternalAxiosRequestConfig, AxiosError, AxiosResponse } from 'axios'
-import { mockApiService } from './mockService'
 import {
   getAccessToken,
-  getRefreshToken,
-  storeTokens,
   clearTokens,
-  shouldRefreshToken
+  shouldRefreshToken,
+  storeTokens
 } from '@/utils/jwtUtils'
-import { authApi } from './apiInterface'
 
 // 扩展ImportMeta接口以支持env属性
 declare global {
@@ -20,12 +17,11 @@ declare global {
   }
 }
 
-// 配置是否使用mock数据
-const USE_MOCK = false // 设为true使用mock数据，false使用真实API
+
 
 // 创建axios实例
 const axiosInstance: AxiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
+  baseURL: '/api', // 使用相对路径，确保通过Nginx代理
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json'
@@ -42,39 +38,40 @@ let isRefreshing = false
 let refreshSubscribers: Array<(token: string) => void> = []
 
 const refreshToken = async (): Promise<string> => {
-  const accessToken = localStorage.getItem('accessToken')
-  if (!accessToken) {
-    logout()
-    throw new Error('No access token available')
-  }
-
   try {
-    // 不使用axiosInstance避免递归调用拦截器
-    const response = await axios.post(
-      authApi.refreshToken,
-      {},
-      {
-        baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
-        params: {
-          oldToken: accessToken
-        }
-      }
-    )
+    // 先尝试从localStorage获取accessToken
+    const accessToken = localStorage.getItem('accessToken')
+    if (!accessToken) {
+      console.warn('No access token available in localStorage')
+      // 无token时直接执行登出，不抛出错误
+      logout()
+      return ''
+    }
+
+    // 使用axiosInstance调用刷新接口，并添加skipAuthRefresh标志避免递归
+    const response = await axiosInstance.post('/auth/refresh', {}, {
+      params: { oldToken: accessToken },
+      skipAuthRefresh: true
+    })
 
     const newToken = response.data
     
     if (!newToken || typeof newToken !== 'string') {
-      throw new Error('Invalid token response')
+      console.error('Invalid token response')
+      logout()
+      return ''
     }
     
     // 存储新token
-    localStorage.setItem('accessToken', newToken)
+    storeTokens(newToken, response.data)
+    console.log('Token refreshed successfully')
     
     return newToken
   } catch (error) {
     console.error('Token refresh failed:', error)
     logout()
-    throw error
+    // 不抛出错误，避免用户看到错误提示
+    return ''
   }
 }
 
@@ -103,18 +100,22 @@ const onRefreshed = (token: string): void => {
 // 请求拦截器
 axiosInstance.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
+    // 检查是否跳过认证刷新（避免刷新token时的递归调用）
+    const skipAuthRefresh = (config as any).skipAuthRefresh;
+    
     // 跳过登录相关接口的token检查
     // 跳过认证相关接口的token检查
+    // 注意：这里直接使用路径字符串而不是apiInterface中的值，因为apiInterface中可能包含/api前缀
     const authPaths = [
-      authApi.login,
-      authApi.register,
-      authApi.refreshToken,
-      authApi.loginByCode,
-      authApi.sendVerificationCode,
-      authApi.resetPassword
+      '/auth/login',
+      '/auth/register',
+      '/auth/refresh',
+      '/auth/login/code',
+      '/auth/send-code',
+      '/auth/reset-password'
     ]
     
-    if (authPaths.some(path => config.url?.includes(path))) {
+    if (authPaths.some(path => config.url?.includes(path)) || skipAuthRefresh) {
       return config
     }
 
@@ -168,16 +169,13 @@ axiosInstance.interceptors.response.use(
       // 适配后端API的响应格式
       const tokenData = response.data;
       if (tokenData.token) {
-        localStorage.setItem('accessToken', tokenData.token);
-        localStorage.setItem('userId', tokenData.userId?.toString() || '');
-        localStorage.setItem('username', tokenData.username || '');
-        localStorage.setItem('role', tokenData.role || '');
-        localStorage.setItem('userInfo', JSON.stringify({
+        // 使用统一的token存储函数
+        storeTokens(tokenData.token, {
           userId: tokenData.userId,
           username: tokenData.username,
-          role: tokenData.role
-        }));
-        console.log('Token stored successfully:', { token: tokenData.token, username: tokenData.username });
+          role: tokenData.role,
+          ...tokenData
+        });
       }
     }
     return response;
@@ -238,239 +236,5 @@ axiosInstance.interceptors.response.use(
     return Promise.reject(error);
   }
 );
-
-// 模拟API请求的处理函数
-const mockRequest = async (config: InternalAxiosRequestConfig): Promise<any> => {
-  console.log('Mock API Request:', config.url)
-  
-  // 根据URL路径匹配对应的mock方法
-  const url = config.url || ''
-  
-  // 解析URL，提取资源类型和ID（移除/api前缀）
-  const urlParts = url.replace(/^\/api\//, '').split('/')
-  
-  try {
-    // 处理认证相关API
-    if (urlParts[0] === 'auth') {
-      if (urlParts[1] === 'login') {
-        if (urlParts[2] === 'code') {
-          const result = await mockApiService.auth.loginByCode(config.data)
-          // 返回标准Axios响应格式
-          return { 
-            data: result.data, 
-            status: 200, 
-            statusText: 'OK', 
-            headers: {}, 
-            config: config 
-          }
-        }
-        const result = await mockApiService.auth.login(config.data)
-        // 返回标准Axios响应格式
-        return { 
-          data: result.data, 
-          status: 200, 
-          statusText: 'OK', 
-          headers: {}, 
-          config: config 
-        }
-      } else if (urlParts[1] === 'send-code') {
-        const result = await mockApiService.auth.sendVerificationCode(
-          config.data.phone, 
-          config.data.type
-        )
-        return { 
-          data: result.data, 
-          status: 200, 
-          statusText: 'OK', 
-          headers: {}, 
-          config: config 
-        }
-      } else if (urlParts[1] === 'register') {
-        const result = await mockApiService.auth.register(config.data)
-        return { 
-          data: result.data, 
-          status: 200, 
-          statusText: 'OK', 
-          headers: {}, 
-          config: config 
-        }
-      } else if (urlParts[1] === 'reset-password') {
-        const result = await mockApiService.auth.resetPassword(config.data)
-        return { 
-          data: result.data, 
-          status: 200, 
-          statusText: 'OK', 
-          headers: {}, 
-          config: config 
-        }
-      } else if (urlParts[1] === 'user-info') {
-        const result = await mockApiService.auth.getCurrentUser()
-        return { 
-          data: result.data, 
-          status: 200, 
-          statusText: 'OK', 
-          headers: {}, 
-          config: config 
-        }
-      } else if (urlParts[1] === 'logout') {
-        const result = await mockApiService.auth.logout()
-        return { 
-          data: result.data, 
-          status: 200, 
-          statusText: 'OK', 
-          headers: {}, 
-          config: config 
-        }
-      }
-    }
-    
-    // 处理社团相关API
-    if (urlParts[0] === 'clubs') {
-      if (urlParts[1] === 'recommended') {
-        const result = await mockApiService.club.getRecommendedClubs()
-        return {
-          data: result.data,
-          status: 200,
-          statusText: 'OK',
-          headers: {},
-          config: config
-        }
-      } else if (urlParts[2] === 'activities') {
-        const clubId = parseInt(urlParts[1])
-        const result = await mockApiService.club.getClubActivities(clubId)
-        return {
-          data: result.data,
-          status: 200,
-          statusText: 'OK',
-          headers: {},
-          config: config
-        }
-      } else if (urlParts[2] === 'join') {
-        const clubId = parseInt(urlParts[1])
-        const result = await mockApiService.club.joinClub(clubId)
-        return {
-          data: result.data,
-          status: 200,
-          statusText: 'OK',
-          headers: {},
-          config: config
-        }
-      } else if (urlParts[2] === 'leave') {
-        const clubId = parseInt(urlParts[1])
-        const result = await mockApiService.club.leaveClub(clubId)
-        return {
-          data: result.data,
-          status: 200,
-          statusText: 'OK',
-          headers: {},
-          config: config
-        }
-      } else if (!isNaN(parseInt(urlParts[1]))) {
-        const clubId = parseInt(urlParts[1])
-        const result = await mockApiService.club.getClubDetail(clubId)
-        return {
-          data: result.data,
-          status: 200,
-          statusText: 'OK',
-          headers: {},
-          config: config
-        }
-      }
-    }
-    
-    // 处理活动相关API
-    if (urlParts[0] === 'activities') {
-      if (urlParts.length === 1) {
-        const result = await mockApiService.activity.getActivities(config.params)
-        return {
-          data: result.data,
-          status: 200,
-          statusText: 'OK',
-          headers: {},
-          config: config
-        }
-      } else if (urlParts[2] === 'join') {
-        const activityId = parseInt(urlParts[1])
-        const result = await mockApiService.activity.joinActivity(activityId)
-        return {
-          data: result.data,
-          status: 200,
-          statusText: 'OK',
-          headers: {},
-          config: config
-        }
-      } else if (urlParts[2] === 'cancel') {
-        const activityId = parseInt(urlParts[1])
-        const result = await mockApiService.activity.cancelActivity(activityId)
-        return {
-          data: result.data,
-          status: 200,
-          statusText: 'OK',
-          headers: {},
-          config: config
-        }
-      } else if (!isNaN(parseInt(urlParts[1]))) {
-        const activityId = parseInt(urlParts[1])
-        const result = await mockApiService.activity.getActivityDetail(activityId)
-        return {
-          data: result.data,
-          status: 200,
-          statusText: 'OK',
-          headers: {},
-          config: config
-        }
-      }
-    }
-    
-    // 处理统计相关API
-    if (urlParts[0] === 'stats') {
-      if (urlParts[1] === 'user') {
-        const result = await mockApiService.stats.getUserStats()
-        return {
-          data: result.data,
-          status: 200,
-          statusText: 'OK',
-          headers: {},
-          config: config
-        }
-      } else if (urlParts[1] === 'activities') {
-        const result = await mockApiService.stats.getActivityStats(config.params)
-        return {
-          data: result.data,
-          status: 200,
-          statusText: 'OK',
-          headers: {},
-          config: config
-        }
-      }
-    }
-    
-    // 如果没有匹配到对应的mock方法，抛出错误
-    throw new Error('No mock response available for: ' + url)
-  } catch (error) {
-    console.error('Mock API Error:', error)
-    throw error
-  }
-}
-
-// 根据配置决定使用真实API还是mock
-if (USE_MOCK) {
-  axiosInstance.interceptors.request.use(mockRequest)
-} else {
-  // 真实API的请求拦截器
-      axiosInstance.interceptors.request.use(
-        (config: InternalAxiosRequestConfig) => {
-          // 在发送请求之前做些什么
-          const token = localStorage.getItem('accessToken')
-          if (token && config.headers) {
-            config.headers.Authorization = `Bearer ${token}`
-          }
-          return config
-        },
-        (error: AxiosError) => {
-          throw error
-        }
-      )
-}
 
 export default axiosInstance

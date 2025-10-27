@@ -1,4 +1,5 @@
 import axiosInstance from './axiosInstance'
+import { storeTokens } from '../utils/jwtUtils'
 import type { LoginForm, CodeLoginForm, RegisterForm, ForgotPasswordForm } from '../types/index'
 
 // 认证API使用JWT工具函数处理token，不需要单独定义响应类型
@@ -13,24 +14,30 @@ export const authApi = {
         username: data.username,
         password: data.password
       };
+      // 使用正确的API路径（vite代理会自动添加/api前缀）
       const response = await axiosInstance.post('/auth/login', loginData);
       // 存储token到本地存储
-      const responseData = response.data || response;
+      const responseData = response.data || {};
+      console.log('Login response:', responseData);
+      
+      // 确保正确存储token和用户信息
       if (responseData.token) {
-        localStorage.setItem('accessToken', responseData.token);
-        localStorage.setItem('userId', responseData.userId.toString());
-        localStorage.setItem('username', responseData.username);
-        localStorage.setItem('role', responseData.role);
-        // 存储用户信息
-        localStorage.setItem('userInfo', JSON.stringify({
+        // 使用统一的token存储函数
+        storeTokens(responseData.token, {
           userId: responseData.userId,
           username: responseData.username,
-          role: responseData.role
-        }));
+          role: responseData.role,
+          ...responseData
+        });
+      } else {
+        console.warn('No token in response:', responseData);
       }
+      
       return response;
     } catch (error) {
       console.error('Login error:', error);
+      // 确保清除可能存在的无效token
+      localStorage.removeItem('accessToken');
       throw error;
     }
   },
@@ -40,12 +47,12 @@ export const authApi = {
     try {
       const response = await axiosInstance.post('/auth/login/code', data);
       // 存储token到本地存储
-      const responseData = response.data || response;
+      const responseData = response.data || {};
       if (responseData.token) {
         localStorage.setItem('accessToken', responseData.token);
-        localStorage.setItem('userId', responseData.userId.toString());
-        localStorage.setItem('username', responseData.username);
-        localStorage.setItem('role', responseData.role);
+        localStorage.setItem('userId', responseData.userId?.toString() || '');
+        localStorage.setItem('username', responseData.username || '');
+        localStorage.setItem('role', responseData.role || '');
         localStorage.setItem('userInfo', JSON.stringify({
           userId: responseData.userId,
           username: responseData.username,
@@ -55,6 +62,7 @@ export const authApi = {
       return response;
     } catch (error) {
       console.error('Login by code error:', error);
+      localStorage.removeItem('accessToken');
       throw error;
     }
   },
@@ -70,9 +78,10 @@ export const authApi = {
     const registerData = {
       username: data.username,
       password: data.password,
-      uid: data.phone, // 使用phone作为校园统一标识
+      uid: data.uid, // 使用正确的uid字段
       realName: data.realName
     };
+    // 使用正确的API路径
     const response = axiosInstance.post('/auth/register', registerData);
     return response;
   },
@@ -89,39 +98,56 @@ export const authApi = {
     if (userInfoStr) {
       return Promise.resolve({ data: JSON.parse(userInfoStr) });
     }
-    // 如果后端有提供获取当前用户信息的接口，可以调用
-    // return axiosInstance.get('/auth/current-user')
-    return Promise.reject(new Error('No user info available'));
+    // 调用API获取当前用户信息
+    return axiosInstance.get('/auth/current-user')
+      .catch(error => {
+        console.error('Failed to get current user:', error);
+        return Promise.reject(new Error('No user info available'));
+      });
   },
   
   // 刷新Token
   refreshToken: (data: { refreshToken: string }) => {
-    // 后端API要求使用查询参数传递oldToken
-    const response = axiosInstance.post(`/auth/refresh?oldToken=${encodeURIComponent(data.refreshToken)}`);
+    // 使用正确的API路径和参数格式
+    const accessToken = localStorage.getItem('accessToken') || data.refreshToken;
+    const response = axiosInstance.post('/auth/refresh', {}, {
+      params: { oldToken: accessToken }
+    });
+    
     // 更新本地存储的token
     response.then(res => {
       const newToken = res.data || res;
       if (typeof newToken === 'string') {
         localStorage.setItem('accessToken', newToken);
+        console.log('Token refreshed successfully');
       }
+    }).catch(error => {
+      console.error('Token refresh failed:', error);
+      // 刷新失败时清除token
+      localStorage.removeItem('accessToken');
     });
+    
     return response;
   },
   
   // 退出登录
-  logout: () => {
-    // 获取当前用户名用于退出登录
-    const username = localStorage.getItem('username');
-    const response = axiosInstance.post(`/auth/logout?username=${encodeURIComponent(username || '')}`);
-    // 确保清除本地存储的token和用户信息
-    response.finally(() => {
+  logout: async () => {
+    try {
+      // 获取当前用户名用于退出登录
+      const username = localStorage.getItem('username');
+      const response = await axiosInstance.post('/auth/logout', {}, {
+        params: { username: username || '' }
+      });
+      return response;
+    } finally {
+      // 确保清除本地存储的token和用户信息
       localStorage.removeItem('accessToken');
       localStorage.removeItem('userId');
       localStorage.removeItem('username');
       localStorage.removeItem('role');
       localStorage.removeItem('userInfo');
-    });
-    return response;
+      console.log('Logged out, all auth data cleared');
+    }
   }
 }
 

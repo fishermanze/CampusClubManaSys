@@ -212,8 +212,11 @@ const handlePasswordLogin = async () => {
   }
 
   try {
+    // 先清除可能存在的旧token
+    localStorage.removeItem("accessToken");
+
     // 调用登录API
-    await authApi.login(loginForm.value);
+    const response = await authApi.login(loginForm.value);
 
     // 记住用户名
     if (loginForm.value.rememberMe) {
@@ -222,18 +225,28 @@ const handlePasswordLogin = async () => {
       localStorage.removeItem("rememberedUser");
     }
 
-    showNotification("登录成功", "success");
+    // 立即检查token是否已保存
+    const token = localStorage.getItem("accessToken");
+    if (token) {
+      showNotification("登录成功", "success");
 
-    // 确认token已保存并跳转到首页
-    setTimeout(() => {
-      const token = localStorage.getItem("accessToken");
       console.log("Token saved:", !!token);
       console.log("Navigating to /home");
-      // 跳转到首页
+      // 直接跳转到首页，不需要延迟
       router.replace("/home");
-    }, 500);
-  } catch (error) {
-    showNotification("登录失败，请检查用户名和密码", "error");
+    } else {
+      // 如果token未保存，显示错误信息
+      console.error("Login succeeded but no token was saved");
+      showNotification("登录成功但认证信息丢失，请重新登录", "error");
+    }
+  } catch (error: any) {
+    // 确保清除可能存在的无效token
+    localStorage.removeItem("accessToken");
+
+    console.error("Login error details:", error);
+    // 显示更具体的错误信息
+    const errorMsg = error.response?.data?.message || "登录失败，请检查用户名和密码";
+    showNotification(errorMsg, "error");
   }
 };
 

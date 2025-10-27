@@ -98,6 +98,42 @@ export const getUserInfo = (): any | null => {
 };
 
 /**
+ * 存储token和用户信息到localStorage
+ * @param token JWT访问令牌
+ * @param userData 用户数据对象
+ */
+export const storeTokens = (token: string, userData?: any): void => {
+  try {
+    localStorage.setItem('accessToken', token);
+    
+    // 存储用户相关信息
+    if (userData) {
+      if (userData.userId !== undefined) {
+        localStorage.setItem('userId', userData.userId?.toString() || '');
+      }
+      if (userData.username) {
+        localStorage.setItem('username', userData.username);
+      }
+      if (userData.role) {
+        localStorage.setItem('role', userData.role);
+      }
+      
+      // 存储完整用户信息对象
+      localStorage.setItem('userInfo', JSON.stringify({
+        userId: userData.userId,
+        username: userData.username,
+        role: userData.role,
+        ...userData
+      }));
+    }
+    
+    console.log('Token and user info stored successfully');
+  } catch (error) {
+    console.error('Failed to store tokens:', error);
+  }
+};
+
+/**
  * 获取当前用户的角色
  * @returns string | null - 用户角色
  */
