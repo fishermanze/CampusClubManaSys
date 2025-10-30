@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/ccms.iml" filepath="$PROJECT_DIR$/.idea/ccms.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/ccms.ccms.main.iml" filepath="$PROJECT_DIR$/.idea/modules/ccms.ccms.main.iml" />
     </modules>
   </component>
 </project>

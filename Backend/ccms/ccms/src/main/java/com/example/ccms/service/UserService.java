@@ -2,18 +2,15 @@ package com.example.ccms.service;
 
 import com.example.ccms.dto.request.LoginRequest;
 import com.example.ccms.dto.request.RegisterRequest;
+import com.example.ccms.dto.response.ApiResponse;
 import com.example.ccms.dto.response.LoginResponse;
+import com.example.ccms.dto.response.UserVO;
+import com.example.ccms.dto.request.PasswordChangeRequest;
 
 public interface UserService {
-    // 用户注册
-    void register(RegisterRequest request);
-
-    // 用户登录（返回令牌）
-    LoginResponse login(LoginRequest request);
-
-    // 刷新令牌
-    String refreshToken(String oldToken);
-
-    // 退出登录（删除Redis中的令牌）
-    void logout(String username);
+    ApiResponse<LoginResponse> login(LoginRequest request);
+    ApiResponse<Void> register(RegisterRequest request);
+    ApiResponse<UserVO> getUserInfo(Long userId);
+    ApiResponse<Void> updateUserInfo(Long userId, UserVO userVO);
+    ApiResponse<Void> changePassword(Long userId, PasswordChangeRequest request);
 }

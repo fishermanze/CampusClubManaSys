@@ -1,47 +1,66 @@
 package com.example.ccms.entity;
 
-import jakarta.persistence.*;
+import com.example.ccms.enums.RoleEnum;
 import lombok.Data;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
-import jakarta.persistence.Column;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 
-import java.time.LocalDateTime;
+import jakarta.persistence.*;
+import java.util.Collection;
+import java.util.Collections;
 
 @Data
 @Entity
 @Table(name = "users")
-public class Users {
+public class Users implements UserDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer userId;
+    private Long id;
 
     @Column(unique = true, nullable = false)
-    private String uid; // 校园统一标识（学号/工号）
-
-    @Column(unique = true, nullable = false)
-    private String username; // 登录用户名
+    private String username;
 
     @Column(nullable = false)
-    private String password; // BCrypt加密密码
+    private String password;
 
-    @Column(nullable = false)
+    @Column(name = "real_name")
     private String realName;
 
+    private String avatar; // 新增：头像URL（与UserVO对应）
+
+    @Column(unique = true)
+    private String phone;
+
+    @Column(unique = true)
+    private String email;
+
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private Role role = Role.level3; // 权限等级
+    private RoleEnum role;
 
-    private Integer status = 1; // 1-正常，0-禁用
+    // 以下为UserDetails接口实现（无需修改）
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return Collections.singletonList(new SimpleGrantedAuthority(role.name()));
+    }
 
-    @CreationTimestamp
-    private LocalDateTime createdAt;
+    @Override
+    public boolean isAccountNonExpired() {
+        return true;
+    }
 
-    @UpdateTimestamp
-    private LocalDateTime updatedAt;
+    @Override
+    public boolean isAccountNonLocked() {
+        return true;
+    }
 
-    // 权限枚举
-    public enum Role {
-        level1, level2, level3
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return true;
     }
 }

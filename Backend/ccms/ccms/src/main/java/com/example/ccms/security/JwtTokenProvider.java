@@ -1,66 +1,48 @@
 package com.example.ccms.security;
 
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
-import io.jsonwebtoken.security.Keys;
+import io.jsonwebtoken.*;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
-import java.security.Key;
 import java.util.Date;
 
 @Component
+@RequiredArgsConstructor
 public class JwtTokenProvider {
 
-    @Value("${jwt.secret}")
-    private String secretKey;
+    @Value("${app.jwtSecret}")
+    private String jwtSecret;
 
-    @Value("${jwt.expiration}")
-    private long expiration; // 令牌过期时间（毫秒）
+    @Value("${app.jwtExpirationInMs}")
+    private int jwtExpirationInMs;
 
-    // 生成签名密钥
-    private Key getSignKey() {
-        byte[] keyBytes = secretKey.getBytes();
-        return Keys.hmacShaKeyFor(keyBytes);
-    }
-
-    // 生成令牌
-    public String generateToken(String username) {
+    public String generateToken(Authentication authentication) {
+        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
         return Jwts.builder()
-                .setSubject(username)
+                .setSubject(userDetails.getUsername())
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + expiration))
-                .signWith(getSignKey(), SignatureAlgorithm.HS256)
+                .setExpiration(new Date(new Date().getTime() + jwtExpirationInMs))
+                .signWith(SignatureAlgorithm.HS512, jwtSecret)
                 .compact();
     }
 
-    // 从令牌中提取用户名
-    public String extractUsername(String token) {
-        return extractClaims(token).getSubject();
-    }
-
-    // 验证令牌有效性
-    public boolean validateToken(String token) {
-        try {
-            Claims claims = extractClaims(token);
-            return !claims.getExpiration().before(new Date()); // 未过期则有效
-        } catch (Exception e) {
-            return false;
-        }
-    }
-
-    // 提取令牌声明
-    private Claims extractClaims(String token) {
-        return Jwts.parserBuilder()
-                .setSigningKey(getSignKey())
-                .build()
+    public String getUsernameFromJWT(String token) {
+        Claims claims = Jwts.parser()
+                .setSigningKey(jwtSecret)
                 .parseClaimsJws(token)
                 .getBody();
+        return claims.getSubject();
     }
 
-    // 获取过期时间（用于Redis存储）
-    public long getExpiration() {
-        return expiration;
+    public boolean validateToken(String authToken) {
+        try {
+            Jwts.parser().setSigningKey(jwtSecret).parseClaimsJws(authToken);
+            return true;
+        } catch (SignatureException | MalformedJwtException | ExpiredJwtException | UnsupportedJwtException | IllegalArgumentException ex) {
+            return false;
+        }
     }
 }
