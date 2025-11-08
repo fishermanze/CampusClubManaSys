@@ -1,0 +1,29 @@
+spring:
+  application:
+    name: message-service
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/club_db?useSSL=false&serverTimezone=UTC
+    username: root
+    password: 320621
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+  redis:
+    host: localhost
+    port: 6379
+
+mybatis-plus:
+  mapper-locations: classpath:mapper/*.xml
+  type-aliases-package: com.club.message.entity
+
+server:
+  port: 8083
+
+# 注册到Nacos（与父工程Spring Cloud Alibaba版本兼容）
+spring.cloud:
+  nacos:
+    discovery:
+      server-addr: localhost:8848

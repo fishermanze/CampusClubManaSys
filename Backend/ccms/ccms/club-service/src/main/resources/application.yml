@@ -1,0 +1,71 @@
+server:
+  port: 8082 # 社团服务专属端口，避开8080
+  servlet:
+    context-path: / # 上下文路径（默认即可，如需前缀可修改）
+
+spring:
+  application:
+    name: club-service # 服务名称（Nacos注册用）
+  cloud:
+    nacos:
+      discovery:
+        server-addr: localhost:8848 # 与认证服务共用Nacos
+  datasource:
+    # 共用club_system数据库，新增社团相关表
+    url: jdbc:mysql://localhost:3306/club_system?useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    username: root
+    password: 320621
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  # Redis配置（支撑分布式锁、缓存等功能）
+  redis:
+    host: localhost # Redis服务地址
+    port: 6379 # 默认端口
+    password: "" # 若Redis设置了密码请填写
+    database: 0 # 使用第0个数据库（可根据需求调整）
+    timeout: 3000ms # 连接超时时间
+    lettuce:
+      pool:
+        max-active: 8 # 最大连接数
+        max-idle: 8 # 最大空闲连接数
+        min-idle: 2 # 最小空闲连接数
+  # RabbitMQ配置（支撑消息队列，与message-service通信）
+  rabbitmq:
+    host: localhost # RabbitMQ服务地址
+    port: 5672 # 默认端口
+    username: guest # 默认用户名
+    password: guest # 默认密码
+    virtual-host: / # 默认虚拟主机
+    publisher-confirm-type: correlated # 开启生产者确认机制（确保消息发送成功）
+    publisher-returns: true # 开启消息返回机制（处理无法路由的消息）
+    listener:
+      simple:
+        acknowledge-mode: auto # 消息确认模式（auto-自动确认，开发环境适用）
+        concurrency: 1 # 消费者最小并发数
+        max-concurrency: 5 # 消费者最大并发数
+
+# JWT配置（必须与认证服务一致，否则Token解析失败）
+jwt:
+  secret: "x8#kP2!zQ7$wR9*vT3&sY5^dF1@gH4%2B6"
+  expire: 86400000
+
+# MyBatis-Plus配置
+mybatis-plus:
+  mapper-locations: classpath:mapper/*.xml # Mapper映射文件路径
+  type-aliases-package: com.club.club.entity # 实体类别名包
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl # 打印SQL日志（开发用）
+    map-underscore-to-camel-case: true # 开启下划线转驼峰（适配数据库字段命名规范）
+    cache-enabled: false # 关闭二级缓存（分布式环境建议使用Redis缓存）
+  global-config:
+    db-config:
+      id-type: auto # 主键自增
+      table-prefix: t_ # 若数据库表有统一前缀（如t_club），可配置此处自动拼接
+
+# 日志配置（优化日志输出格式）
+logging:
+  level:
+    root: INFO # 根日志级别
+    com.club.club.mapper: DEBUG # Mapper层日志级别（打印SQL参数）
+    com.club.club.service: INFO # Service层日志级别
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n" # 控制台日志格式

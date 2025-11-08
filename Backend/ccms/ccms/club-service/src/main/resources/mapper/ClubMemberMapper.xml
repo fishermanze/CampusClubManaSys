@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.club.club.mapper.ClubMemberMapper">
+
+    <!--
+        根据用户ID查询加入的所有社团成员记录
+        参数：userId - 用户ID
+        返回：该用户加入的所有社团成员关联信息列表
+    -->
+    <select id="selectByUserId" resultType="com.club.club.entity.ClubMember">
+        SELECT * FROM club_member WHERE user_id = #{userId}
+    </select>
+
+    <!--
+        根据社团ID和用户ID查询成员记录（校验是否已加入）
+        参数：clubId - 社团ID，userId - 用户ID
+        返回：匹配的成员记录（null表示未加入）
+    -->
+    <select id="selectByClubIdAndUserId" resultType="com.club.club.entity.ClubMember">
+        SELECT * FROM club_member WHERE club_id = #{clubId} AND user_id = #{userId}
+    </select>
+
+    <!--
+        扩展：查询社团的所有成员（支持角色筛选）
+        参数：clubId - 社团ID，role - 角色（0-普通成员，1-管理员，2-创始人，传null查询所有）
+        返回：符合条件的社团成员列表
+    -->
+    <select id="selectByClubId" resultType="com.club.club.entity.ClubMember">
+        SELECT * FROM club_member WHERE club_id = #{clubId}
+        <if test="role != null">
+            AND role = #{role}
+        </if>
+    </select>
+
+    <!--
+        扩展：统计社团成员数量
+        参数：clubId - 社团ID
+        返回：该社团的成员总数
+    -->
+    <select id="countByClubId" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM club_member WHERE club_id = #{clubId}
+    </select>
+
+    <!-- 新增：根据社团ID删除成员记录（用于踢人功能） -->
+    <delete id="deleteByClubIdAndUserId" parameterType="java.util.Map">
+        DELETE FROM club_member WHERE club_id = #{clubId} AND user_id = #{userId}
+    </delete>
+</mapper>
