@@ -142,7 +142,7 @@
 <script setup lang="ts">
 import { ref, computed } from "vue";
 import { useRouter } from "vue-router";
-import { authApi } from "@/api/apiService";
+import { authApi } from "../api/apiService";
 
 const router = useRouter();
 
@@ -216,7 +216,7 @@ const handlePasswordLogin = async () => {
     localStorage.removeItem("accessToken");
 
     // 调用登录API
-    const response = await authApi.login(loginForm.value);
+    await authApi.login(loginForm.value);
 
     // 记住用户名
     if (loginForm.value.rememberMe) {
@@ -269,12 +269,15 @@ const handleRegister = async () => {
   }
 
   try {
-    // 准备注册数据，只包含后端需要的字段
+    // 准备注册数据，包含所有需要的字段
     const registerData = {
       username: registerForm.value.username,
       password: registerForm.value.password,
+      confirmPassword: registerForm.value.confirmPassword,
       uid: registerForm.value.uid,
       realName: registerForm.value.realName,
+      phone: "", // 添加缺失的字段
+      verificationCode: "", // 添加缺失的字段
     };
 
     // 调用注册API

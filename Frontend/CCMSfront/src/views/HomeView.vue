@@ -1,11 +1,11 @@
 <template>
   <div class="home-container">
     <!-- 左侧导航栏 -->
-    <aside class="sidebar">
+    <aside class="sidebar" :class="{ 'sidebar-collapsed': sidebarCollapsed }">
       <div class="sidebar-header">
         <div class="logo">
           <i class="fa fa-graduation-cap"></i>
-          <span>校园社团管理</span>
+          <span :class="{ hidden: sidebarCollapsed }">校园社团管理</span>
         </div>
       </div>
 
@@ -14,80 +14,137 @@
           <li class="nav-item active">
             <a href="#" class="nav-link">
               <i class="fa fa-home"></i>
-              <span>首页</span>
+              <span :class="{ hidden: sidebarCollapsed }">首页</span>
             </a>
           </li>
           <li class="nav-item">
-            <a href="#" class="nav-link">
+            <router-link to="/my-clubs" class="nav-link">
               <i class="fa fa-users"></i>
-              <span>我的社团</span>
-            </a>
+              <span :class="{ hidden: sidebarCollapsed }">我的社团</span>
+            </router-link>
           </li>
           <li class="nav-item">
-            <a href="#" class="nav-link">
+            <router-link to="/activities" class="nav-link">
               <i class="fa fa-calendar"></i>
-              <span>活动管理</span>
-            </a>
+              <span :class="{ hidden: sidebarCollapsed }">活动管理</span>
+            </router-link>
           </li>
           <li class="nav-item">
-            <a href="#" class="nav-link">
+            <router-link to="/applications" class="nav-link">
               <i class="fa fa-file-text"></i>
-              <span>申请记录</span>
-            </a>
+              <span :class="{ hidden: sidebarCollapsed }">申请记录</span>
+            </router-link>
           </li>
           <li class="nav-item">
-            <a href="#" class="nav-link">
+            <router-link to="/notifications" class="nav-link">
               <i class="fa fa-bell"></i>
-              <span>通知中心</span>
+              <span :class="{ hidden: sidebarCollapsed }">通知中心</span>
               <span class="badge">3</span>
-            </a>
+            </router-link>
           </li>
           <li class="nav-item">
-            <a href="#" class="nav-link">
+            <router-link to="/settings" class="nav-link">
               <i class="fa fa-cog"></i>
-              <span>设置</span>
-            </a>
+              <span :class="{ hidden: sidebarCollapsed }">设置</span>
+            </router-link>
           </li>
         </ul>
       </nav>
     </aside>
 
     <!-- 主内容区 -->
-    <main class="main-content">
+    <main class="main-content" :class="{ 'content-expanded': sidebarCollapsed }">
       <!-- 顶部信息栏 -->
       <header class="top-bar">
         <div class="top-bar-left">
-          <button class="menu-toggle" @click="toggleSidebar">
+          <button
+            class="menu-toggle"
+            @click="toggleSidebar"
+            :aria-label="sidebarCollapsed ? '展开侧边栏' : '收起侧边栏'"
+          >
             <i class="fa fa-bars"></i>
           </button>
-          <h1>欢迎回来，{{ currentUser?.realName || "用户" }}</h1>
+          <h1 class="welcome-text">欢迎回来，{{ currentUser?.realName || "用户" }}</h1>
         </div>
 
         <div class="top-bar-right">
           <div class="search-box">
-            <input type="text" placeholder="搜索..." />
+            <input type="text" placeholder="搜索社团、活动..." />
             <i class="fa fa-search"></i>
           </div>
 
           <div class="user-profile">
-            <div class="notification-icon">
+            <div class="notification-icon" @click="toggleNotifications">
               <i class="fa fa-bell"></i>
-              <span class="badge">3</span>
+              <span class="badge" v-if="stats.unreadNotifications > 0">{{
+                stats.unreadNotifications
+              }}</span>
             </div>
             <div class="user-info" @click="toggleUserMenu">
-              <img :src="currentUser?.avatarUrl || ''" alt="用户头像" />
+              <img
+                :src="currentUser?.avatar || '/default-avatar.png'"
+                alt="用户头像"
+                class="avatar"
+              />
               <span>{{ currentUser?.realName || "用户" }}</span>
               <i class="fa fa-chevron-down"></i>
             </div>
 
             <!-- 用户下拉菜单 -->
-            <div v-if="showUserMenu" class="user-dropdown">
-              <a href="#" class="dropdown-item"> <i class="fa fa-user"></i> 个人资料 </a>
-              <a href="#" class="dropdown-item"> <i class="fa fa-cog"></i> 账号设置 </a>
+            <div v-if="showUserMenu" class="user-dropdown" @click.stop>
+              <router-link
+                to="/profile"
+                class="dropdown-item"
+                @click="showUserMenu = false"
+              >
+                <i class="fa fa-user"></i> 个人资料
+              </router-link>
+              <router-link
+                to="/settings"
+                class="dropdown-item"
+                @click="showUserMenu = false"
+              >
+                <i class="fa fa-cog"></i> 账号设置
+              </router-link>
               <div class="dropdown-divider"></div>
-              <a href="#" class="dropdown-item" @click="logout">
+              <a href="#" class="dropdown-item logout" @click="logout">
                 <i class="fa fa-sign-out"></i> 退出登录
               </a>
+            </div>
+
+            <!-- 通知下拉菜单 -->
+            <div v-if="showNotifications" class="notifications-dropdown" @click.stop>
+              <div class="dropdown-header">
+                <h4>通知</h4>
+              </div>
+              <div class="notification-item">
+                <i class="fa fa-bell text-primary"></i>
+                <div class="notification-content">
+                  <p>社团活动即将开始</p>
+                  <span>10分钟前</span>
+                </div>
+              </div>
+              <div class="notification-item">
+                <i class="fa fa-check-circle text-success"></i>
+                <div class="notification-content">
+                  <p>您已成功加入编程社团</p>
+                  <span>2小时前</span>
+                </div>
+              </div>
+              <div class="notification-item">
+                <i class="fa fa-info-circle text-warning"></i>
+                <div class="notification-content">
+                  <p>系统维护通知</p>
+                  <span>昨天</span>
+                </div>
+              </div>
+              <router-link
+                to="/notifications"
+                class="view-all-link"
+                @click="showNotifications = false"
+              >
+                查看全部
+              </router-link>
             </div>
           </div>
         </div>
@@ -97,46 +154,46 @@
       <div class="page-content">
         <!-- 数据统计卡片 -->
         <div class="stats-cards">
-          <div class="stat-card">
-            <div class="stat-icon">
+          <div class="stat-card" :class="{ loading: loading }">
+            <div class="stat-icon bg-primary">
               <i class="fa fa-users"></i>
             </div>
             <div class="stat-content">
               <h3>已加入社团</h3>
-              <p class="stat-number">{{ stats.joinedClubs }}</p>
-              <span class="stat-change">+2 本周</span>
+              <p class="stat-number">{{ stats.joinedClubs || "-" }}</p>
+              <span class="stat-change positive">+2 本周</span>
             </div>
           </div>
 
-          <div class="stat-card">
-            <div class="stat-icon">
+          <div class="stat-card" :class="{ loading: loading }">
+            <div class="stat-icon bg-success">
               <i class="fa fa-calendar-check-o"></i>
             </div>
             <div class="stat-content">
               <h3>参与活动</h3>
-              <p class="stat-number">{{ stats.participatedActivities }}</p>
-              <span class="stat-change">+5 本月</span>
+              <p class="stat-number">{{ stats.participatedActivities || "-" }}</p>
+              <span class="stat-change positive">+5 本月</span>
             </div>
           </div>
 
-          <div class="stat-card">
-            <div class="stat-icon">
+          <div class="stat-card" :class="{ loading: loading }">
+            <div class="stat-icon bg-warning">
               <i class="fa fa-star"></i>
             </div>
             <div class="stat-content">
               <h3>社团积分</h3>
-              <p class="stat-number">{{ stats.points }}</p>
-              <span class="stat-change">+15 昨日</span>
+              <p class="stat-number">{{ stats.points || "-" }}</p>
+              <span class="stat-change positive">+15 昨日</span>
             </div>
           </div>
 
-          <div class="stat-card">
-            <div class="stat-icon">
+          <div class="stat-card" :class="{ loading: loading }">
+            <div class="stat-icon bg-info">
               <i class="fa fa-trophy"></i>
             </div>
             <div class="stat-content">
               <h3>成就等级</h3>
-              <p class="stat-number">{{ stats.achievementLevel }}</p>
+              <p class="stat-number">{{ stats.achievementLevel || "-" }}</p>
               <span class="stat-change">Lv.3 铜牌会员</span>
             </div>
           </div>
@@ -291,7 +348,35 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, nextTick } from "vue";
 import { useRouter } from "vue-router";
-import type { User, Club, Activity } from "@/types";
+// 定义本地类型
+interface User {
+  userId?: string;
+  username?: string;
+  realName?: string;
+  avatar?: string;
+  role?: string;
+}
+
+interface Club {
+  clubId: string;
+  clubName: string;
+  logoUrl: string;
+  description?: string;
+  memberCount: number;
+  rating: number;
+  [key: string]: any;
+}
+
+interface Activity {
+  activityId: string;
+  activityName: string;
+  clubName?: string;
+  time?: string;
+  location?: string;
+  status: number;
+  statusText?: string;
+  [key: string]: any;
+}
 
 const router = useRouter();
 
@@ -316,6 +401,10 @@ const currentUser = ref<User | null>(null);
 const sidebarCollapsed = ref(false);
 // 用户菜单状态
 const showUserMenu = ref(false);
+// 通知菜单状态
+const showNotifications = ref(false);
+// 加载状态
+const loading = ref(false);
 // 选中的社团（用于模态框）
 const selectedClub = ref<Club | null>(null);
 
@@ -341,7 +430,7 @@ const stats = reactive({
 // }
 
 // 导入API服务
-import { statsApi } from "../api/apiService";
+import { authApi, clubApi, activityApi, statsApi } from "../api/apiService";
 
 // 推荐社团列表
 const recommendedClubs = ref<Array<Club & { isJoined?: boolean }>>([]);
@@ -404,7 +493,16 @@ const toggleSidebar = () => {
 // 切换用户菜单
 const toggleUserMenu = () => {
   showUserMenu.value = !showUserMenu.value;
+  showNotifications.value = false; // 关闭通知菜单
 };
+
+// 切换通知菜单
+const toggleNotifications = () => {
+  showNotifications.value = !showNotifications.value;
+  showUserMenu.value = false; // 关闭用户菜单
+};
+
+// 关闭所有下拉菜单（备用函数）
 
 // 退出登录
 const logout = () => {
@@ -473,7 +571,9 @@ const initChart = async () => {
             const x = startX + 50 + index * (barWidth + 15);
             const y = startY - barHeight;
 
-            ctx.fillStyle = colors[index];
+            // 确保颜色存在
+            const color = colors[index] || "#666666";
+            ctx.fillStyle = color;
             ctx.fillRect(x, y, barWidth, barHeight);
 
             // 绘制数值
@@ -503,12 +603,15 @@ const initChart = async () => {
   }
 };
 
-// 监听点击外部区域关闭用户菜单
+// 监听点击外部区域关闭下拉菜单
 onMounted(() => {
   const handleClickOutside = (event: MouseEvent) => {
     const userInfo = document.querySelector(".user-info");
     const userDropdown = document.querySelector(".user-dropdown");
+    const notificationIcon = document.querySelector(".notification-icon");
+    const notificationsDropdown = document.querySelector(".notifications-dropdown");
 
+    // 检查点击是否在用户信息区域外部
     if (
       userInfo &&
       userDropdown &&
@@ -516,6 +619,16 @@ onMounted(() => {
       !userDropdown.contains(event.target as Node)
     ) {
       showUserMenu.value = false;
+    }
+
+    // 检查点击是否在通知图标区域外部
+    if (
+      notificationIcon &&
+      notificationsDropdown &&
+      !notificationIcon.contains(event.target as Node) &&
+      !notificationsDropdown.contains(event.target as Node)
+    ) {
+      showNotifications.value = false;
     }
   };
 
@@ -525,7 +638,97 @@ onMounted(() => {
   nextTick(() => {
     initChart();
   });
+
+  // 获取用户数据和统计信息
+  fetchUserInfo();
+  fetchStats();
+  fetchRecommendedClubs();
+  fetchRecentActivities();
 });
+
+// 获取用户信息
+const fetchUserInfo = async () => {
+  loading.value = true;
+  try {
+    const response = await authApi.getCurrentUser();
+    const userInfo = response.data || response;
+    // 更新当前用户信息
+    currentUser.value = userInfo;
+  } catch (error) {
+    console.error("获取用户信息失败:", error);
+    // 显示错误提示
+  } finally {
+    loading.value = false;
+  }
+};
+
+// 获取统计数据
+const fetchStats = async () => {
+  loading.value = true;
+  try {
+    const response = await statsApi.getUserStats();
+    const statsData = response.data || response;
+    Object.assign(stats, statsData);
+  } catch (error) {
+    console.error("获取统计数据失败:", error);
+    // 使用模拟数据
+  } finally {
+    loading.value = false;
+  }
+};
+
+// 获取推荐社团
+const fetchRecommendedClubs = async () => {
+  loading.value = true;
+  try {
+    const response = await clubApi.getRecommendedClubs();
+    const clubsData = response.data || response;
+    const clubs = Array.isArray(clubsData) ? clubsData : [];
+    recommendedClubs.value = clubs.map((club: any) => ({
+      ...club,
+      isJoined: false, // 这里可以根据实际情况判断用户是否已加入
+    }));
+  } catch (error) {
+    console.error("获取推荐社团失败:", error);
+    // 使用模拟数据
+  } finally {
+    loading.value = false;
+  }
+};
+
+// 获取近期活动
+const fetchRecentActivities = async () => {
+  loading.value = true;
+  try {
+    const response = await activityApi.getActivities({ page: 1, pageSize: 5 });
+    const responseData = response.data || response;
+    const activityList = responseData.list || [];
+    recentActivities.value = activityList.map((activity: any) => {
+      let statusText = "";
+      switch (activity.status) {
+        case 0:
+          statusText = "即将开始";
+          break;
+        case 1:
+          statusText = "进行中";
+          break;
+        case 2:
+          statusText = "已结束";
+          break;
+      }
+      return {
+        ...activity,
+        time: activity.startTime,
+        statusText,
+      };
+    });
+  } catch (error) {
+    console.error("获取近期活动失败:", error);
+    // 使用模拟数据
+  } finally {
+    loading.value = false;
+  }
+};
 </script>
 
 <style scoped>
@@ -682,16 +885,24 @@ onMounted(() => {
   margin-right: 10px;
 }
 
-.user-dropdown {
+.user-dropdown,
+.notifications-dropdown {
   position: absolute;
   top: 100%;
   right: 0;
-  width: 200px;
+  width: 300px;
   background-color: white;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   border-radius: 8px;
   margin-top: 10px;
   z-index: 100;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.notifications-dropdown {
+  right: 60px;
+  width: 350px;
 }
 
 .dropdown-item {
@@ -701,6 +912,64 @@ onMounted(() => {
   color: #374151;
   text-decoration: none;
   transition: background-color 0.3s ease;
+  cursor: pointer;
+}
+
+.notifications-dropdown .dropdown-header {
+  padding: 15px 20px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.notifications-dropdown .dropdown-header h4 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.notification-item {
+  display: flex;
+  align-items: flex-start;
+  padding: 15px 20px;
+  border-bottom: 1px solid #f3f4f6;
+  transition: background-color 0.3s ease;
+}
+
+.notification-item:hover {
+  background-color: #f9fafb;
+}
+
+.notification-item i {
+  margin-right: 15px;
+  font-size: 18px;
+}
+
+.notification-content {
+  flex: 1;
+}
+
+.notification-content p {
+  margin: 0 0 5px 0;
+  font-size: 14px;
+  color: #374151;
+}
+
+.notification-content span {
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+.view-all-link {
+  display: block;
+  text-align: center;
+  padding: 12px;
+  color: #667eea;
+  text-decoration: none;
+  font-size: 14px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.view-all-link:hover {
+  background-color: #f9fafb;
 }
 
 .dropdown-item:hover {
@@ -730,6 +999,7 @@ onMounted(() => {
   grid-template-columns: repeat(4, 1fr);
   gap: 20px;
   margin-bottom: 30px;
+  transition: all 0.3s ease;
 }
 
 .stat-card {
@@ -739,6 +1009,17 @@ onMounted(() => {
   display: flex;
   align-items: center;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+}
+
+.stat-card.loading {
+  opacity: 0.7;
+  pointer-events: none;
 }
 
 .stat-icon {
@@ -1139,11 +1420,23 @@ table th {
   .charts-section {
     grid-template-columns: 1fr;
   }
+
+  .notifications-dropdown {
+    right: 0;
+    width: 300px;
+  }
 }
 
 @media (max-width: 768px) {
   .sidebar {
     width: 60px;
+    position: fixed;
+    height: 100vh;
+    z-index: 1000;
+  }
+
+  .sidebar-header {
+    padding: 15px 10px;
   }
 
   .logo span,
@@ -1151,8 +1444,27 @@ table th {
     display: none;
   }
 
+  .nav-link {
+    padding: 15px 10px;
+    justify-content: center;
+  }
+
+  .nav-link i {
+    margin-right: 0;
+  }
+
+  .main-content {
+    margin-left: 60px;
+  }
+
   .top-bar {
     padding: 15px;
+    flex-wrap: wrap;
+  }
+
+  .search-box {
+    width: 100%;
+    margin-top: 10px;
   }
 
   .page-content {
@@ -1161,6 +1473,34 @@ table th {
 
   .stats-cards {
     grid-template-columns: 1fr;
+  }
+
+  .stat-card {
+    padding: 20px;
+  }
+
+  .stat-icon {
+    width: 50px;
+    height: 50px;
+  }
+
+  .notification-icon {
+    margin-right: 10px;
+  }
+
+  .user-info img {
+    width: 35px;
+    height: 35px;
+  }
+
+  .user-info span {
+    display: none;
+  }
+
+  .user-dropdown,
+  .notifications-dropdown {
+    width: 250px;
+    right: -50px;
   }
 }
 </style>

@@ -12,44 +12,32 @@ export const authApi = {
   register: '/api/auth/register',
   // 修改密码
   changePassword: '/api/auth/change-password',
-  // 更新用户信息
-  updateProfile: '/api/auth/profile/update',
-  // 用户上传头像
-  uploadAvatar: '/api/auth/avatar/upload',
   // 刷新Token
-  refreshToken: '/api/auth/refresh',
-  // 验证码登录
-  loginByCode: '/api/auth/login/code',
-  // 发送验证码
-  sendVerificationCode: '/api/auth/send-code',
-  // 重置密码
-  resetPassword: '/api/auth/reset-password'
+  refreshToken: '/api/auth/refresh'
 };
 
 // 社团相关接口
 export const clubApi = {
   // 获取社团列表
-  getClubs: '/api/clubs',
+  getClubs: '/api/club/list',
   // 获取社团详情
-  getClubById: (id: number) => `/api/clubs/${id}`,
+  getClubById: (id: number) => `/api/club/${id}`,
   // 创建社团
-  createClub: '/api/clubs',
-  // 更新社团信息
-  updateClub: (id: number) => `/api/clubs/${id}`,
-  // 删除社团
-  deleteClub: (id: number) => `/api/clubs/${id}`,
-  // 加入社团
-  joinClub: (id: number) => `/api/clubs/${id}/join`,
-  // 退出社团
-  leaveClub: (id: number) => `/api/clubs/${id}/leave`,
+  createClub: '/api/club/create',
+  // 申请加入社团
+  applyJoinClub: '/api/club/apply',
+  // 获取待审批申请列表
+  getPendingApplies: '/api/club/apply/pending',
+  // 处理申请
+  handleClubApply: '/api/club/apply/handle',
+  // 踢出成员
+  kickMember: '/api/club/kick',
   // 获取用户加入的社团
-  getUserClubs: '/api/clubs/user',
-  // 搜索社团
-  searchClubs: '/api/clubs/search',
-  // 获取热门社团
-  getPopularClubs: '/api/clubs/popular',
-  // 获取新创建社团
-  getNewClubs: '/api/clubs/new'
+  getUserClubs: '/api/club/my-clubs',
+  // 获取社团成员列表
+  getClubMembers: (clubId: number) => `/api/club/${clubId}/members`,
+  // 获取社团成员数量
+  getClubMemberCount: (clubId: number) => `/api/club/${clubId}/member-count`
 };
 
 // 活动相关接口

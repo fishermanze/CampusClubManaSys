@@ -1,11 +1,24 @@
 import axios from 'axios'
 import type { AxiosInstance, InternalAxiosRequestConfig, AxiosError, AxiosResponse } from 'axios'
-import {
-  getAccessToken,
-  clearTokens,
-  shouldRefreshToken,
-  storeTokens
-} from '@/utils/jwtUtils'
+// 导入JWT相关工具函数（暂时使用内联实现）
+// 暂时使用内联实现JWT相关功能
+const getAccessToken = (): string | null => {
+  return localStorage.getItem('userToken') || localStorage.getItem('accessToken')
+}
+
+const shouldRefreshToken = (): boolean => {
+  // 简化实现，实际应解析token过期时间
+  return false
+}
+
+const storeTokens = (token: string, data?: any): void => {
+  localStorage.setItem('userToken', token)
+  if (data) {
+    localStorage.setItem('userId', data.userId || '')
+    localStorage.setItem('username', data.username || '')
+    localStorage.setItem('userInfo', JSON.stringify(data))
+  }
+}
 
 // 扩展ImportMeta接口以支持env属性
 declare global {
@@ -21,7 +34,7 @@ declare global {
 
 // 创建axios实例
 const axiosInstance: AxiosInstance = axios.create({
-  baseURL: '/api', // 使用相对路径，确保通过Nginx代理
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api', // 使用环境变量配置
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json'
@@ -49,21 +62,27 @@ const refreshToken = async (): Promise<string> => {
     }
 
     // 使用axiosInstance调用刷新接口，并添加skipAuthRefresh标志避免递归
-    const response = await axiosInstance.post('/auth/refresh', {}, {
-      params: { oldToken: accessToken },
-      skipAuthRefresh: true
+    // 创建一个新的axios实例来避免拦截器递归
+    const refreshInstance = axios.create({
+      baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api',
+      timeout: 10000
+    })
+    
+    const response = await refreshInstance.post('/api/auth/refresh', {}, {
+      params: { oldToken: accessToken }
     })
 
-    const newToken = response.data
+    const responseData = response.data
     
-    if (!newToken || typeof newToken !== 'string') {
+    if (!responseData.success || !responseData.data || !responseData.data.token) {
       console.error('Invalid token response')
       logout()
       return ''
     }
     
+    const newToken = responseData.data.token
     // 存储新token
-    storeTokens(newToken, response.data)
+    storeTokens(newToken, responseData.data)
     console.log('Token refreshed successfully')
     
     return newToken

@@ -14,23 +14,28 @@ export const authApi = {
         username: data.username,
         password: data.password
       };
-      // 使用正确的API路径（vite代理会自动添加/api前缀）
-      const response = await axiosInstance.post('/auth/login', loginData);
+      // 使用正确的API路径
+      const response = await axiosInstance.post('/api/auth/login', loginData);
       // 存储token到本地存储
       const responseData = response.data || {};
       console.log('Login response:', responseData);
       
-      // 确保正确存储token和用户信息
-      if (responseData.token) {
-        // 使用统一的token存储函数
-        storeTokens(responseData.token, {
-          userId: responseData.userId,
-          username: responseData.username,
-          role: responseData.role,
-          ...responseData
-        });
+      // 根据后端返回格式处理数据
+      if (responseData.success && responseData.data) {
+        const { token, user } = responseData.data;
+        if (token && user) {
+          // 使用统一的token存储函数
+          storeTokens(token, {
+            userId: user.id,
+            username: user.username,
+            realName: user.name,
+            role: user.role,
+            ...user
+          });
+        }
       } else {
-        console.warn('No token in response:', responseData);
+        console.warn('Login failed or invalid response:', responseData);
+        throw new Error(responseData.message || '登录失败');
       }
       
       return response;
