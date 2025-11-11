@@ -1648,3 +1648,325 @@
 2025-11-12T00:58:04.146+08:00 DEBUG 4940 --- [http-nio-8084-exec-5] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json]
 2025-11-12T00:58:04.147+08:00 DEBUG 4940 --- [http-nio-8084-exec-5] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [Page 1 of 1 containing com.campusclub.activity.dto.ActivityDTO instances]
 2025-11-12T00:58:04.155+08:00 DEBUG 4940 --- [http-nio-8084-exec-5] o.s.web.servlet.DispatcherServlet        : Completed 200 OK
+2025-11-12T00:58:08.817+08:00 DEBUG 4940 --- [http-nio-8084-exec-6] o.s.web.servlet.DispatcherServlet        : GET "/activities/user/46/participated?page=1&size=10", parameters={masked}
+2025-11-12T00:58:08.818+08:00 DEBUG 4940 --- [http-nio-8084-exec-6] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to com.campusclub.activity.controller.ActivityController#getUserParticipatedActivities(Long, int, int)
+2025-11-12T00:58:08.818+08:00 DEBUG 4940 --- [http-nio-8084-exec-6] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json]
+2025-11-12T00:58:08.818+08:00 DEBUG 4940 --- [http-nio-8084-exec-6] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [Page 1 of 1 containing UNKNOWN instances]
+2025-11-12T00:58:08.818+08:00 DEBUG 4940 --- [http-nio-8084-exec-6] o.s.web.servlet.DispatcherServlet        : Completed 200 OK
+2025-11-12T00:58:08.826+08:00 DEBUG 4940 --- [http-nio-8084-exec-7] o.s.web.servlet.DispatcherServlet        : GET "/activities/user/46/participated?page=1&size=5", parameters={masked}
+2025-11-12T00:58:08.826+08:00 DEBUG 4940 --- [http-nio-8084-exec-7] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to com.campusclub.activity.controller.ActivityController#getUserParticipatedActivities(Long, int, int)
+2025-11-12T00:58:08.827+08:00 DEBUG 4940 --- [http-nio-8084-exec-7] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json]
+2025-11-12T00:58:08.827+08:00 DEBUG 4940 --- [http-nio-8084-exec-7] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [Page 1 of 1 containing UNKNOWN instances]
+2025-11-12T00:58:08.827+08:00 DEBUG 4940 --- [http-nio-8084-exec-7] o.s.web.servlet.DispatcherServlet        : Completed 200 OK
+2025-11-12T00:58:10.563+08:00 DEBUG 4940 --- [http-nio-8084-exec-8] o.s.web.servlet.DispatcherServlet        : GET "/activities?page=0&size=10&sort=id,asc", parameters={masked}
+2025-11-12T00:58:10.563+08:00 DEBUG 4940 --- [http-nio-8084-exec-8] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to com.campusclub.activity.controller.ActivityController#getActivities(int, int, String, String)
+2025-11-12T00:58:10.566+08:00 DEBUG 4940 --- [http-nio-8084-exec-8] org.hibernate.SQL                        : 
+    select
+        a1_0.id,
+        a1_0.club_id,
+        a1_0.content,
+        a1_0.cover_image,
+        a1_0.created_at,
+        a1_0.current_participants,
+        a1_0.description,
+        a1_0.end_time,
+        a1_0.enrollment_deadline,
+        a1_0.images,
+        a1_0.location,
+        a1_0.max_participants,
+        a1_0.need_approval,
+        a1_0.organizer_id,
+        a1_0.start_time,
+        a1_0.status,
+        a1_0.tags,
+        a1_0.title,
+        a1_0.updated_at 
+    from
+        activities a1_0 
+    order by
+        a1_0.id 
+    limit
+        ?,?
+2025-11-12T00:58:10.567+08:00 DEBUG 4940 --- [http-nio-8084-exec-8] org.hibernate.SQL                        : 
+    select
+        count(a1_0.id) 
+    from
+        activities a1_0
+2025-11-12T00:58:10.569+08:00 DEBUG 4940 --- [http-nio-8084-exec-8] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json]
+2025-11-12T00:58:10.569+08:00 DEBUG 4940 --- [http-nio-8084-exec-8] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [Page 1 of 3 containing com.campusclub.activity.dto.ActivityDTO instances]
+2025-11-12T00:58:10.570+08:00 DEBUG 4940 --- [http-nio-8084-exec-8] o.s.web.servlet.DispatcherServlet        : Completed 200 OK
+2025-11-12T00:58:34.011+08:00 DEBUG 4940 --- [DiscoveryClient-HeartbeatExecutor-0] o.s.web.client.RestTemplate              : HTTP PUT http://localhost:8761/eureka/apps/ACTIVITY-SERVICE/fisherman.mshome.net:activity-service:8084?status=UP&lastDirtyTimestamp=1762853355168
+2025-11-12T00:58:34.011+08:00 DEBUG 4940 --- [DiscoveryClient-CacheRefreshExecutor-0] o.s.web.client.RestTemplate              : HTTP GET http://localhost:8761/eureka/apps/delta
+2025-11-12T00:58:34.011+08:00 DEBUG 4940 --- [DiscoveryClient-HeartbeatExecutor-0] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2025-11-12T00:58:34.011+08:00 DEBUG 4940 --- [DiscoveryClient-CacheRefreshExecutor-0] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2025-11-12T00:58:34.024+08:00 DEBUG 4940 --- [DiscoveryClient-CacheRefreshExecutor-0] o.s.web.client.RestTemplate              : Response 200 OK
+2025-11-12T00:58:34.024+08:00 DEBUG 4940 --- [DiscoveryClient-HeartbeatExecutor-0] o.s.web.client.RestTemplate              : Response 200 OK
+2025-11-12T00:58:34.024+08:00 DEBUG 4940 --- [DiscoveryClient-CacheRefreshExecutor-0] o.s.web.client.RestTemplate              : Reading to [org.springframework.cloud.netflix.eureka.http.EurekaApplications]
+2025-11-12T00:59:04.028+08:00 DEBUG 4940 --- [DiscoveryClient-CacheRefreshExecutor-0] o.s.web.client.RestTemplate              : HTTP GET http://localhost:8761/eureka/apps/delta
+2025-11-12T00:59:04.028+08:00 DEBUG 4940 --- [DiscoveryClient-HeartbeatExecutor-0] o.s.web.client.RestTemplate              : HTTP PUT http://localhost:8761/eureka/apps/ACTIVITY-SERVICE/fisherman.mshome.net:activity-service:8084?status=UP&lastDirtyTimestamp=1762853355168
+2025-11-12T00:59:04.028+08:00 DEBUG 4940 --- [DiscoveryClient-CacheRefreshExecutor-0] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2025-11-12T00:59:04.028+08:00 DEBUG 4940 --- [DiscoveryClient-HeartbeatExecutor-0] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2025-11-12T00:59:04.041+08:00 DEBUG 4940 --- [DiscoveryClient-CacheRefreshExecutor-0] o.s.web.client.RestTemplate              : Response 200 OK
+2025-11-12T00:59:04.041+08:00 DEBUG 4940 --- [DiscoveryClient-HeartbeatExecutor-0] o.s.web.client.RestTemplate              : Response 200 OK
+2025-11-12T00:59:04.041+08:00 DEBUG 4940 --- [DiscoveryClient-CacheRefreshExecutor-0] o.s.web.client.RestTemplate              : Reading to [org.springframework.cloud.netflix.eureka.http.EurekaApplications]
+2025-11-12T00:59:12.647+08:00 DEBUG 4940 --- [http-nio-8084-exec-10] o.s.web.servlet.DispatcherServlet        : GET "/activities/user/46/participated?page=1&size=10", parameters={masked}
+2025-11-12T00:59:12.648+08:00 DEBUG 4940 --- [http-nio-8084-exec-10] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to com.campusclub.activity.controller.ActivityController#getUserParticipatedActivities(Long, int, int)
+2025-11-12T00:59:12.648+08:00 DEBUG 4940 --- [http-nio-8084-exec-10] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json]
+2025-11-12T00:59:12.648+08:00 DEBUG 4940 --- [http-nio-8084-exec-10] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [Page 1 of 1 containing UNKNOWN instances]
+2025-11-12T00:59:12.649+08:00 DEBUG 4940 --- [http-nio-8084-exec-10] o.s.web.servlet.DispatcherServlet        : Completed 200 OK
+2025-11-12T00:59:12.655+08:00 DEBUG 4940 --- [http-nio-8084-exec-1] o.s.web.servlet.DispatcherServlet        : GET "/activities/user/46/participated?page=1&size=5", parameters={masked}
+2025-11-12T00:59:12.655+08:00 DEBUG 4940 --- [http-nio-8084-exec-1] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to com.campusclub.activity.controller.ActivityController#getUserParticipatedActivities(Long, int, int)
+2025-11-12T00:59:12.656+08:00 DEBUG 4940 --- [http-nio-8084-exec-1] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json]
+2025-11-12T00:59:12.656+08:00 DEBUG 4940 --- [http-nio-8084-exec-1] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [Page 1 of 1 containing UNKNOWN instances]
+2025-11-12T00:59:12.656+08:00 DEBUG 4940 --- [http-nio-8084-exec-1] o.s.web.servlet.DispatcherServlet        : Completed 200 OK
+2025-11-12T00:59:15.441+08:00  INFO 4940 --- [AsyncResolver-bootstrap-executor-0] c.n.d.s.r.aws.ConfigClusterResolver      : Resolving eureka endpoints via configuration
+2025-11-12T00:59:16.950+08:00 DEBUG 4940 --- [http-nio-8084-exec-2] o.s.web.servlet.DispatcherServlet        : GET "/activities?page=0&size=10&sort=id,asc", parameters={masked}
+2025-11-12T00:59:16.951+08:00 DEBUG 4940 --- [http-nio-8084-exec-2] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to com.campusclub.activity.controller.ActivityController#getActivities(int, int, String, String)
+2025-11-12T00:59:16.952+08:00 DEBUG 4940 --- [http-nio-8084-exec-2] org.hibernate.SQL                        : 
+    select
+        a1_0.id,
+        a1_0.club_id,
+        a1_0.content,
+        a1_0.cover_image,
+        a1_0.created_at,
+        a1_0.current_participants,
+        a1_0.description,
+        a1_0.end_time,
+        a1_0.enrollment_deadline,
+        a1_0.images,
+        a1_0.location,
+        a1_0.max_participants,
+        a1_0.need_approval,
+        a1_0.organizer_id,
+        a1_0.start_time,
+        a1_0.status,
+        a1_0.tags,
+        a1_0.title,
+        a1_0.updated_at 
+    from
+        activities a1_0 
+    order by
+        a1_0.id 
+    limit
+        ?,?
+2025-11-12T00:59:16.954+08:00 DEBUG 4940 --- [http-nio-8084-exec-2] org.hibernate.SQL                        : 
+    select
+        count(a1_0.id) 
+    from
+        activities a1_0
+2025-11-12T00:59:16.955+08:00 DEBUG 4940 --- [http-nio-8084-exec-2] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json]
+2025-11-12T00:59:16.956+08:00 DEBUG 4940 --- [http-nio-8084-exec-2] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [Page 1 of 3 containing com.campusclub.activity.dto.ActivityDTO instances]
+2025-11-12T00:59:16.956+08:00 DEBUG 4940 --- [http-nio-8084-exec-2] o.s.web.servlet.DispatcherServlet        : Completed 200 OK
+2025-11-12T00:59:22.459+08:00 DEBUG 4940 --- [http-nio-8084-exec-3] o.s.web.servlet.DispatcherServlet        : GET "/activities/user/46/participated?page=1&size=50", parameters={masked}
+2025-11-12T00:59:22.460+08:00 DEBUG 4940 --- [http-nio-8084-exec-3] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to com.campusclub.activity.controller.ActivityController#getUserParticipatedActivities(Long, int, int)
+2025-11-12T00:59:22.460+08:00 DEBUG 4940 --- [http-nio-8084-exec-3] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json]
+2025-11-12T00:59:22.460+08:00 DEBUG 4940 --- [http-nio-8084-exec-3] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [Page 1 of 1 containing UNKNOWN instances]
+2025-11-12T00:59:22.461+08:00 DEBUG 4940 --- [http-nio-8084-exec-3] o.s.web.servlet.DispatcherServlet        : Completed 200 OK
+2025-11-12T00:59:34.050+08:00 DEBUG 4940 --- [DiscoveryClient-HeartbeatExecutor-0] o.s.web.client.RestTemplate              : HTTP PUT http://localhost:8761/eureka/apps/ACTIVITY-SERVICE/fisherman.mshome.net:activity-service:8084?status=UP&lastDirtyTimestamp=1762853355168
+2025-11-12T00:59:34.050+08:00 DEBUG 4940 --- [DiscoveryClient-CacheRefreshExecutor-0] o.s.web.client.RestTemplate              : HTTP GET http://localhost:8761/eureka/apps/delta
+2025-11-12T00:59:34.050+08:00 DEBUG 4940 --- [DiscoveryClient-HeartbeatExecutor-0] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2025-11-12T00:59:34.050+08:00 DEBUG 4940 --- [DiscoveryClient-CacheRefreshExecutor-0] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2025-11-12T00:59:34.059+08:00 DEBUG 4940 --- [DiscoveryClient-HeartbeatExecutor-0] o.s.web.client.RestTemplate              : Response 200 OK
+2025-11-12T00:59:34.059+08:00 DEBUG 4940 --- [DiscoveryClient-CacheRefreshExecutor-0] o.s.web.client.RestTemplate              : Response 200 OK
+2025-11-12T00:59:34.059+08:00 DEBUG 4940 --- [DiscoveryClient-CacheRefreshExecutor-0] o.s.web.client.RestTemplate              : Reading to [org.springframework.cloud.netflix.eureka.http.EurekaApplications]
+2025-11-12T00:59:39.513+08:00 DEBUG 4940 --- [http-nio-8084-exec-4] o.s.web.servlet.DispatcherServlet        : GET "/activities/user/1/participated?page=1&size=50", parameters={masked}
+2025-11-12T00:59:39.514+08:00 DEBUG 4940 --- [http-nio-8084-exec-4] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to com.campusclub.activity.controller.ActivityController#getUserParticipatedActivities(Long, int, int)
+2025-11-12T00:59:39.514+08:00 DEBUG 4940 --- [http-nio-8084-exec-4] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json]
+2025-11-12T00:59:39.514+08:00 DEBUG 4940 --- [http-nio-8084-exec-4] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [Page 1 of 1 containing UNKNOWN instances]
+2025-11-12T00:59:39.514+08:00 DEBUG 4940 --- [http-nio-8084-exec-4] o.s.web.servlet.DispatcherServlet        : Completed 200 OK
+2025-11-12T00:59:45.776+08:00 DEBUG 4940 --- [http-nio-8084-exec-5] o.s.web.servlet.DispatcherServlet        : GET "/activities?page=0&size=10&sort=id,asc", parameters={masked}
+2025-11-12T00:59:45.777+08:00 DEBUG 4940 --- [http-nio-8084-exec-5] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to com.campusclub.activity.controller.ActivityController#getActivities(int, int, String, String)
+2025-11-12T00:59:45.778+08:00 DEBUG 4940 --- [http-nio-8084-exec-5] org.hibernate.SQL                        : 
+    select
+        a1_0.id,
+        a1_0.club_id,
+        a1_0.content,
+        a1_0.cover_image,
+        a1_0.created_at,
+        a1_0.current_participants,
+        a1_0.description,
+        a1_0.end_time,
+        a1_0.enrollment_deadline,
+        a1_0.images,
+        a1_0.location,
+        a1_0.max_participants,
+        a1_0.need_approval,
+        a1_0.organizer_id,
+        a1_0.start_time,
+        a1_0.status,
+        a1_0.tags,
+        a1_0.title,
+        a1_0.updated_at 
+    from
+        activities a1_0 
+    order by
+        a1_0.id 
+    limit
+        ?,?
+2025-11-12T00:59:45.780+08:00 DEBUG 4940 --- [http-nio-8084-exec-5] org.hibernate.SQL                        : 
+    select
+        count(a1_0.id) 
+    from
+        activities a1_0
+2025-11-12T00:59:45.781+08:00 DEBUG 4940 --- [http-nio-8084-exec-5] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json]
+2025-11-12T00:59:45.781+08:00 DEBUG 4940 --- [http-nio-8084-exec-5] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [Page 1 of 3 containing com.campusclub.activity.dto.ActivityDTO instances]
+2025-11-12T00:59:45.782+08:00 DEBUG 4940 --- [http-nio-8084-exec-5] o.s.web.servlet.DispatcherServlet        : Completed 200 OK
+2025-11-12T00:59:50.278+08:00 DEBUG 4940 --- [http-nio-8084-exec-6] o.s.web.servlet.DispatcherServlet        : GET "/activities/club/5?page=1&size=20", parameters={masked}
+2025-11-12T00:59:50.279+08:00 DEBUG 4940 --- [http-nio-8084-exec-6] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to com.campusclub.activity.controller.ActivityController#getClubActivities(Long, int, int, String)
+2025-11-12T00:59:50.281+08:00 DEBUG 4940 --- [http-nio-8084-exec-6] org.hibernate.SQL                        : 
+    select
+        a1_0.id,
+        a1_0.club_id,
+        a1_0.content,
+        a1_0.cover_image,
+        a1_0.created_at,
+        a1_0.current_participants,
+        a1_0.description,
+        a1_0.end_time,
+        a1_0.enrollment_deadline,
+        a1_0.images,
+        a1_0.location,
+        a1_0.max_participants,
+        a1_0.need_approval,
+        a1_0.organizer_id,
+        a1_0.start_time,
+        a1_0.status,
+        a1_0.tags,
+        a1_0.title,
+        a1_0.updated_at 
+    from
+        activities a1_0 
+    where
+        a1_0.club_id=? 
+    order by
+        a1_0.created_at desc 
+    limit
+        ?,?
+2025-11-12T00:59:50.284+08:00 DEBUG 4940 --- [http-nio-8084-exec-6] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json]
+2025-11-12T00:59:50.285+08:00 DEBUG 4940 --- [http-nio-8084-exec-6] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [Page 1 of 1 containing com.campusclub.activity.dto.ActivityDTO instances]
+2025-11-12T00:59:50.285+08:00 DEBUG 4940 --- [http-nio-8084-exec-6] o.s.web.servlet.DispatcherServlet        : Completed 200 OK
+2025-11-12T01:00:00.193+08:00 DEBUG 4940 --- [http-nio-8084-exec-7] o.s.web.servlet.DispatcherServlet        : GET "/activities/user/1/participated?page=1&size=50", parameters={masked}
+2025-11-12T01:00:00.194+08:00 DEBUG 4940 --- [http-nio-8084-exec-7] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to com.campusclub.activity.controller.ActivityController#getUserParticipatedActivities(Long, int, int)
+2025-11-12T01:00:00.194+08:00 DEBUG 4940 --- [http-nio-8084-exec-7] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json]
+2025-11-12T01:00:00.194+08:00 DEBUG 4940 --- [http-nio-8084-exec-7] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [Page 1 of 1 containing UNKNOWN instances]
+2025-11-12T01:00:00.195+08:00 DEBUG 4940 --- [http-nio-8084-exec-7] o.s.web.servlet.DispatcherServlet        : Completed 200 OK
+2025-11-12T01:00:03.774+08:00 DEBUG 4940 --- [http-nio-8084-exec-8] o.s.web.servlet.DispatcherServlet        : GET "/activities/user/1/participated?page=1&size=10", parameters={masked}
+2025-11-12T01:00:03.775+08:00 DEBUG 4940 --- [http-nio-8084-exec-8] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to com.campusclub.activity.controller.ActivityController#getUserParticipatedActivities(Long, int, int)
+2025-11-12T01:00:03.775+08:00 DEBUG 4940 --- [http-nio-8084-exec-8] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json]
+2025-11-12T01:00:03.775+08:00 DEBUG 4940 --- [http-nio-8084-exec-8] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [Page 1 of 1 containing UNKNOWN instances]
+2025-11-12T01:00:03.776+08:00 DEBUG 4940 --- [http-nio-8084-exec-8] o.s.web.servlet.DispatcherServlet        : Completed 200 OK
+2025-11-12T01:00:03.789+08:00 DEBUG 4940 --- [http-nio-8084-exec-9] o.s.web.servlet.DispatcherServlet        : GET "/activities/user/1/participated?page=1&size=5", parameters={masked}
+2025-11-12T01:00:03.789+08:00 DEBUG 4940 --- [http-nio-8084-exec-9] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to com.campusclub.activity.controller.ActivityController#getUserParticipatedActivities(Long, int, int)
+2025-11-12T01:00:03.789+08:00 DEBUG 4940 --- [http-nio-8084-exec-9] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json]
+2025-11-12T01:00:03.789+08:00 DEBUG 4940 --- [http-nio-8084-exec-9] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [Page 1 of 1 containing UNKNOWN instances]
+2025-11-12T01:00:03.789+08:00 DEBUG 4940 --- [http-nio-8084-exec-9] o.s.web.servlet.DispatcherServlet        : Completed 200 OK
+2025-11-12T01:00:04.071+08:00 DEBUG 4940 --- [DiscoveryClient-CacheRefreshExecutor-0] o.s.web.client.RestTemplate              : HTTP GET http://localhost:8761/eureka/apps/delta
+2025-11-12T01:00:04.071+08:00 DEBUG 4940 --- [DiscoveryClient-HeartbeatExecutor-0] o.s.web.client.RestTemplate              : HTTP PUT http://localhost:8761/eureka/apps/ACTIVITY-SERVICE/fisherman.mshome.net:activity-service:8084?status=UP&lastDirtyTimestamp=1762853355168
+2025-11-12T01:00:04.071+08:00 DEBUG 4940 --- [DiscoveryClient-CacheRefreshExecutor-0] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2025-11-12T01:00:04.071+08:00 DEBUG 4940 --- [DiscoveryClient-HeartbeatExecutor-0] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2025-11-12T01:00:04.081+08:00 DEBUG 4940 --- [DiscoveryClient-CacheRefreshExecutor-0] o.s.web.client.RestTemplate              : Response 200 OK
+2025-11-12T01:00:04.081+08:00 DEBUG 4940 --- [DiscoveryClient-HeartbeatExecutor-0] o.s.web.client.RestTemplate              : Response 200 OK
+2025-11-12T01:00:04.081+08:00 DEBUG 4940 --- [DiscoveryClient-CacheRefreshExecutor-0] o.s.web.client.RestTemplate              : Reading to [org.springframework.cloud.netflix.eureka.http.EurekaApplications]
+2025-11-12T01:00:05.870+08:00 DEBUG 4940 --- [http-nio-8084-exec-10] o.s.web.servlet.DispatcherServlet        : GET "/activities?page=0&size=10&sort=id,asc", parameters={masked}
+2025-11-12T01:00:05.871+08:00 DEBUG 4940 --- [http-nio-8084-exec-10] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to com.campusclub.activity.controller.ActivityController#getActivities(int, int, String, String)
+2025-11-12T01:00:05.873+08:00 DEBUG 4940 --- [http-nio-8084-exec-10] org.hibernate.SQL                        : 
+    select
+        a1_0.id,
+        a1_0.club_id,
+        a1_0.content,
+        a1_0.cover_image,
+        a1_0.created_at,
+        a1_0.current_participants,
+        a1_0.description,
+        a1_0.end_time,
+        a1_0.enrollment_deadline,
+        a1_0.images,
+        a1_0.location,
+        a1_0.max_participants,
+        a1_0.need_approval,
+        a1_0.organizer_id,
+        a1_0.start_time,
+        a1_0.status,
+        a1_0.tags,
+        a1_0.title,
+        a1_0.updated_at 
+    from
+        activities a1_0 
+    order by
+        a1_0.id 
+    limit
+        ?,?
+2025-11-12T01:00:05.873+08:00 DEBUG 4940 --- [http-nio-8084-exec-10] org.hibernate.SQL                        : 
+    select
+        count(a1_0.id) 
+    from
+        activities a1_0
+2025-11-12T01:00:05.873+08:00 DEBUG 4940 --- [http-nio-8084-exec-10] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json]
+2025-11-12T01:00:05.873+08:00 DEBUG 4940 --- [http-nio-8084-exec-10] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [Page 1 of 3 containing com.campusclub.activity.dto.ActivityDTO instances]
+2025-11-12T01:00:05.873+08:00 DEBUG 4940 --- [http-nio-8084-exec-10] o.s.web.servlet.DispatcherServlet        : Completed 200 OK
+2025-11-12T01:00:13.066+08:00 DEBUG 4940 --- [http-nio-8084-exec-1] o.s.web.servlet.DispatcherServlet        : GET "/activities/user/1/participated?page=1&size=10", parameters={masked}
+2025-11-12T01:00:13.066+08:00 DEBUG 4940 --- [http-nio-8084-exec-1] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to com.campusclub.activity.controller.ActivityController#getUserParticipatedActivities(Long, int, int)
+2025-11-12T01:00:13.067+08:00 DEBUG 4940 --- [http-nio-8084-exec-1] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json]
+2025-11-12T01:00:13.067+08:00 DEBUG 4940 --- [http-nio-8084-exec-1] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [Page 1 of 1 containing UNKNOWN instances]
+2025-11-12T01:00:13.067+08:00 DEBUG 4940 --- [http-nio-8084-exec-1] o.s.web.servlet.DispatcherServlet        : Completed 200 OK
+2025-11-12T01:00:13.075+08:00 DEBUG 4940 --- [http-nio-8084-exec-2] o.s.web.servlet.DispatcherServlet        : GET "/activities/user/1/participated?page=1&size=5", parameters={masked}
+2025-11-12T01:00:13.075+08:00 DEBUG 4940 --- [http-nio-8084-exec-2] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to com.campusclub.activity.controller.ActivityController#getUserParticipatedActivities(Long, int, int)
+2025-11-12T01:00:13.075+08:00 DEBUG 4940 --- [http-nio-8084-exec-2] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json]
+2025-11-12T01:00:13.075+08:00 DEBUG 4940 --- [http-nio-8084-exec-2] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [Page 1 of 1 containing UNKNOWN instances]
+2025-11-12T01:00:13.076+08:00 DEBUG 4940 --- [http-nio-8084-exec-2] o.s.web.servlet.DispatcherServlet        : Completed 200 OK
+2025-11-12T01:00:15.247+08:00 DEBUG 4940 --- [http-nio-8084-exec-3] o.s.web.servlet.DispatcherServlet        : GET "/activities?page=0&size=10&sort=id,asc", parameters={masked}
+2025-11-12T01:00:15.255+08:00 DEBUG 4940 --- [http-nio-8084-exec-3] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to com.campusclub.activity.controller.ActivityController#getActivities(int, int, String, String)
+2025-11-12T01:00:15.257+08:00 DEBUG 4940 --- [http-nio-8084-exec-3] org.hibernate.SQL                        : 
+    select
+        a1_0.id,
+        a1_0.club_id,
+        a1_0.content,
+        a1_0.cover_image,
+        a1_0.created_at,
+        a1_0.current_participants,
+        a1_0.description,
+        a1_0.end_time,
+        a1_0.enrollment_deadline,
+        a1_0.images,
+        a1_0.location,
+        a1_0.max_participants,
+        a1_0.need_approval,
+        a1_0.organizer_id,
+        a1_0.start_time,
+        a1_0.status,
+        a1_0.tags,
+        a1_0.title,
+        a1_0.updated_at 
+    from
+        activities a1_0 
+    order by
+        a1_0.id 
+    limit
+        ?,?
+2025-11-12T01:00:15.258+08:00 DEBUG 4940 --- [http-nio-8084-exec-3] org.hibernate.SQL                        : 
+    select
+        count(a1_0.id) 
+    from
+        activities a1_0
+2025-11-12T01:00:15.260+08:00 DEBUG 4940 --- [http-nio-8084-exec-3] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json]
+2025-11-12T01:00:15.260+08:00 DEBUG 4940 --- [http-nio-8084-exec-3] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [Page 1 of 3 containing com.campusclub.activity.dto.ActivityDTO instances]
+2025-11-12T01:00:15.261+08:00 DEBUG 4940 --- [http-nio-8084-exec-3] o.s.web.servlet.DispatcherServlet        : Completed 200 OK
+2025-11-12T01:00:27.183+08:00 DEBUG 4940 --- [http-nio-8084-exec-4] o.s.web.servlet.DispatcherServlet        : GET "/activities/user/1/participated?page=1&size=50", parameters={masked}
+2025-11-12T01:00:27.192+08:00 DEBUG 4940 --- [http-nio-8084-exec-4] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to com.campusclub.activity.controller.ActivityController#getUserParticipatedActivities(Long, int, int)
+2025-11-12T01:00:27.193+08:00 DEBUG 4940 --- [http-nio-8084-exec-4] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json]
+2025-11-12T01:00:27.193+08:00 DEBUG 4940 --- [http-nio-8084-exec-4] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [Page 1 of 1 containing UNKNOWN instances]
+2025-11-12T01:00:27.193+08:00 DEBUG 4940 --- [http-nio-8084-exec-4] o.s.web.servlet.DispatcherServlet        : Completed 200 OK
+2025-11-12T01:00:34.091+08:00 DEBUG 4940 --- [DiscoveryClient-CacheRefreshExecutor-0] o.s.web.client.RestTemplate              : HTTP GET http://localhost:8761/eureka/apps/delta
+2025-11-12T01:00:34.091+08:00 DEBUG 4940 --- [DiscoveryClient-HeartbeatExecutor-0] o.s.web.client.RestTemplate              : HTTP PUT http://localhost:8761/eureka/apps/ACTIVITY-SERVICE/fisherman.mshome.net:activity-service:8084?status=UP&lastDirtyTimestamp=1762853355168
+2025-11-12T01:00:34.091+08:00 DEBUG 4940 --- [DiscoveryClient-CacheRefreshExecutor-0] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2025-11-12T01:00:34.091+08:00 DEBUG 4940 --- [DiscoveryClient-HeartbeatExecutor-0] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2025-11-12T01:00:34.108+08:00 DEBUG 4940 --- [DiscoveryClient-CacheRefreshExecutor-0] o.s.web.client.RestTemplate              : Response 200 OK
+2025-11-12T01:00:34.108+08:00 DEBUG 4940 --- [DiscoveryClient-HeartbeatExecutor-0] o.s.web.client.RestTemplate              : Response 200 OK
+2025-11-12T01:00:34.108+08:00 DEBUG 4940 --- [DiscoveryClient-CacheRefreshExecutor-0] o.s.web.client.RestTemplate              : Reading to [org.springframework.cloud.netflix.eureka.http.EurekaApplications]
+2025-11-12T01:01:04.117+08:00 DEBUG 4940 --- [DiscoveryClient-CacheRefreshExecutor-0] o.s.web.client.RestTemplate              : HTTP GET http://localhost:8761/eureka/apps/delta
+2025-11-12T01:01:04.117+08:00 DEBUG 4940 --- [DiscoveryClient-HeartbeatExecutor-0] o.s.web.client.RestTemplate              : HTTP PUT http://localhost:8761/eureka/apps/ACTIVITY-SERVICE/fisherman.mshome.net:activity-service:8084?status=UP&lastDirtyTimestamp=1762853355168
+2025-11-12T01:01:04.117+08:00 DEBUG 4940 --- [DiscoveryClient-CacheRefreshExecutor-0] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2025-11-12T01:01:04.117+08:00 DEBUG 4940 --- [DiscoveryClient-HeartbeatExecutor-0] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
+2025-11-12T01:01:04.129+08:00 DEBUG 4940 --- [DiscoveryClient-HeartbeatExecutor-0] o.s.web.client.RestTemplate              : Response 200 OK
+2025-11-12T01:01:04.129+08:00 DEBUG 4940 --- [DiscoveryClient-CacheRefreshExecutor-0] o.s.web.client.RestTemplate              : Response 200 OK
+2025-11-12T01:01:04.130+08:00 DEBUG 4940 --- [DiscoveryClient-CacheRefreshExecutor-0] o.s.web.client.RestTemplate              : Reading to [org.springframework.cloud.netflix.eureka.http.EurekaApplications]
