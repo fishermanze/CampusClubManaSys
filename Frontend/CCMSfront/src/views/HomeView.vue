@@ -1,6 +1,5 @@
 <template>
   <div class="home-container">
-    <!-- 左侧导航栏 -->
     <aside class="sidebar" :class="{ 'sidebar-collapsed': sidebarCollapsed }">
       <div class="sidebar-header">
         <div class="logo">
@@ -12,10 +11,10 @@
       <nav class="sidebar-nav">
         <ul>
           <li class="nav-item active">
-            <a href="#" class="nav-link">
+            <router-link to="/home" class="nav-link">
               <i class="fa fa-home"></i>
               <span :class="{ hidden: sidebarCollapsed }">首页</span>
-            </a>
+            </router-link>
           </li>
           <li class="nav-item">
             <router-link to="/my-clubs" class="nav-link">
@@ -40,6 +39,12 @@
               <i class="fa fa-bell"></i>
               <span :class="{ hidden: sidebarCollapsed }">通知中心</span>
               <span class="badge">3</span>
+            </router-link>
+          </li>
+          <li class="nav-item">
+            <router-link to="/profile" class="nav-link">
+              <i class="fa fa-user"></i>
+              <span :class="{ hidden: sidebarCollapsed }">个人资料</span>
             </router-link>
           </li>
           <li class="nav-item">
@@ -152,143 +157,57 @@
 
       <!-- 页面内容 -->
       <div class="page-content">
-        <!-- 数据统计卡片 -->
-        <div class="stats-cards">
-          <div class="stat-card" :class="{ loading: loading }">
-            <div class="stat-icon bg-primary">
-              <i class="fa fa-users"></i>
-            </div>
-            <div class="stat-content">
-              <h3>已加入社团</h3>
-              <p class="stat-number">{{ stats.joinedClubs || "-" }}</p>
-              <span class="stat-change positive">+2 本周</span>
-            </div>
-          </div>
-
-          <div class="stat-card" :class="{ loading: loading }">
-            <div class="stat-icon bg-success">
-              <i class="fa fa-calendar-check-o"></i>
-            </div>
-            <div class="stat-content">
-              <h3>参与活动</h3>
-              <p class="stat-number">{{ stats.participatedActivities || "-" }}</p>
-              <span class="stat-change positive">+5 本月</span>
-            </div>
-          </div>
-
-          <div class="stat-card" :class="{ loading: loading }">
-            <div class="stat-icon bg-warning">
-              <i class="fa fa-star"></i>
-            </div>
-            <div class="stat-content">
-              <h3>社团积分</h3>
-              <p class="stat-number">{{ stats.points || "-" }}</p>
-              <span class="stat-change positive">+15 昨日</span>
-            </div>
-          </div>
-
-          <div class="stat-card" :class="{ loading: loading }">
-            <div class="stat-icon bg-info">
-              <i class="fa fa-trophy"></i>
-            </div>
-            <div class="stat-content">
-              <h3>成就等级</h3>
-              <p class="stat-number">{{ stats.achievementLevel || "-" }}</p>
-              <span class="stat-change">Lv.3 铜牌会员</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- 活跃度图表和AI推荐 -->
-        <div class="charts-section">
-          <div class="chart-card">
-            <div class="card-header">
-              <h3>活跃度趋势</h3>
-              <div class="chart-filters">
-                <button class="filter-btn active">周</button>
-                <button class="filter-btn">月</button>
-                <button class="filter-btn">年</button>
+        <!-- 数据统计部分 -->
+        <section class="section" id="dashboard-stats">
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-icon bg-primary">
+                <i class="fa fa-users"></i>
+              </div>
+              <div class="stat-content">
+                <h3>{{ stats.joinedClubs || "0" }}</h3>
+                <p>已加入社团</p>
               </div>
             </div>
-            <div class="chart-container">
-              <div id="activityChart"></div>
+            <div class="stat-card">
+              <div class="stat-icon bg-success">
+                <i class="fa fa-calendar"></i>
+              </div>
+              <div class="stat-content">
+                <h3>{{ stats.participatedActivities || "0" }}</h3>
+                <p>参与活动</p>
+              </div>
             </div>
-          </div>
-
-          <div class="recommendation-card">
-            <div class="card-header">
-              <h3>AI社团推荐</h3>
-              <button class="refresh-btn">
-                <i class="fa fa-refresh"></i>
-              </button>
+            <div class="stat-card">
+              <div class="stat-icon bg-warning">
+                <i class="fa fa-file-text"></i>
+              </div>
+              <div class="stat-content">
+                <h3>{{ stats.pendingApplications || "0" }}</h3>
+                <p>待处理申请</p>
+              </div>
             </div>
-            <div class="recommendations">
-              <div
-                v-for="club in recommendedClubs"
-                :key="club.clubId"
-                class="recommendation-item"
-                @click="showClubModal(club as Club)"
-              >
-                <img :src="club.logoUrl" alt="社团头像" />
-                <div class="club-info">
-                  <h4>{{ club.clubName }}</h4>
-                  <p>{{ (club as any).category }}</p>
-                  <div class="club-stats">
-                    <span><i class="fa fa-users"></i> {{ club.memberCount }}人</span>
-                    <span
-                      ><i class="fa fa-calendar"></i>
-                      {{ (club as any).activityCount }}活动</span
-                    >
-                  </div>
-                </div>
-                <button class="join-btn">加入</button>
+            <div class="stat-card">
+              <div class="stat-icon bg-danger">
+                <i class="fa fa-bell"></i>
+              </div>
+              <div class="stat-content">
+                <h3>{{ stats.unreadNotifications || "0" }}</h3>
+                <p>未读通知</p>
               </div>
             </div>
           </div>
-        </div>
+        </section>
 
-        <!-- 近期活动表格 -->
-        <div class="activities-card">
-          <div class="card-header">
-            <h3>近期活动</h3>
-            <button class="view-all-btn">查看全部</button>
+        <!-- 活跃度图表部分 -->
+        <section class="section" id="activity-chart">
+          <div class="section-header">
+            <h2>本周活跃度</h2>
           </div>
-          <div class="activities-table">
-            <table>
-              <thead>
-                <tr>
-                  <th>活动名称</th>
-                  <th>社团</th>
-                  <th>时间</th>
-                  <th>地点</th>
-                  <th>状态</th>
-                  <th>操作</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="activity in recentActivities" :key="activity.activityId">
-                  <td>{{ activity.activityName }}</td>
-                  <td>{{ activity.clubName }}</td>
-                  <td>{{ activity.time }}</td>
-                  <td>{{ activity.location }}</td>
-                  <td>
-                    <span :class="['status-badge', activity.status]">
-                      {{ activity.statusText }}
-                    </span>
-                  </td>
-                  <td>
-                    <button
-                      class="action-btn"
-                      :class="activity.status === 1 ? 'primary' : 'secondary'"
-                    >
-                      {{ activity.status === 1 ? "签到" : "详情" }}
-                    </button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+          <div class="chart-container">
+            <div id="activityChart"></div>
           </div>
-        </div>
+        </section>
       </div>
     </main>
 
@@ -296,44 +215,42 @@
     <div v-if="selectedClub" class="modal-overlay" @click="closeClubModal">
       <div class="modal-content" @click.stop>
         <div class="modal-header">
-          <h3>{{ selectedClub.clubName }}</h3>
+          <h3>{{ selectedClub.name }}</h3>
           <button class="close-btn" @click="closeClubModal">
             <i class="fa fa-times"></i>
           </button>
         </div>
         <div class="modal-body">
           <div class="club-detail">
-            <img :src="selectedClub.logoUrl" alt="社团头像" class="club-detail-avatar" />
+            <img :src="selectedClub.logo" alt="社团头像" class="club-detail-avatar" />
             <div class="club-detail-info">
-              <h4>{{ selectedClub.clubName }}</h4>
+              <h4>{{ selectedClub.name }}</h4>
               <p>{{ selectedClub.description }}</p>
               <div class="club-detail-stats">
                 <div class="stat-item">
                   <i class="fa fa-users"></i>
-                  <span>{{ selectedClub.memberCount }}人</span>
+                  <span>{{ selectedClub.memberCount || 0 }}人</span>
                 </div>
                 <div class="stat-item">
                   <i class="fa fa-calendar"></i>
-                  <span>{{ (selectedClub as any).activityCount }}活动</span>
+                  <span>{{ selectedClub.totalActivityCount || 0 }}活动</span>
                 </div>
                 <div class="stat-item">
-                  <i class="fa fa-star"></i>
-                  <span>{{ selectedClub.rating }}分</span>
+                  <i class="fa fa-building"></i>
+                  <span>{{ selectedClub.category || "未分类" }}</span>
                 </div>
               </div>
             </div>
           </div>
           <div class="club-activities">
             <h4>近期活动</h4>
-            <ul>
-              <li
-                v-for="(activity, index) in (selectedClub as any).recentActivities"
-                :key="index"
-              >
+            <ul v-if="selectedClubActivities.length > 0">
+              <li v-for="activity in selectedClubActivities" :key="activity.id">
                 <i class="fa fa-calendar-check-o"></i>
-                <span>{{ activity.name }} - {{ activity.time }}</span>
+                <span>{{ activity.title }} - {{ activity.startTime }}</span>
               </li>
             </ul>
+            <p v-else class="empty-activities">暂无活动</p>
           </div>
         </div>
         <div class="modal-footer">
@@ -346,389 +263,175 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, nextTick } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
-// 定义本地类型
-interface User {
-  userId?: string;
-  username?: string;
-  realName?: string;
-  avatar?: string;
-  role?: string;
-}
-
-interface Club {
-  clubId: string;
-  clubName: string;
-  logoUrl: string;
-  description?: string;
-  memberCount: number;
-  rating: number;
-  [key: string]: any;
-}
-
-interface Activity {
-  activityId: string;
-  activityName: string;
-  clubName?: string;
-  time?: string;
-  location?: string;
-  status: number;
-  statusText?: string;
-  [key: string]: any;
-}
+import { authApi, clubApi, activityApi, notificationApi } from "../api/apiService";
+import axiosInstance from "../api/axiosInstance";
+import type { User, Club, Activity } from "../types/index";
 
 const router = useRouter();
 
-// 当前登录用户
-const currentUser = ref<User | null>(null);
-
-// 获取用户信息（暂时注释掉未使用的函数）
-// const fetchUserInfo = async () => {
-//   try {
-//     const response = await authApi.getCurrentUser()
-//     const userInfo = (response as any).data || response
-//     // 更新当前用户信息
-//     currentUser.value = userInfo
-//   } catch (error) {
-//     console.error('获取用户信息失败:', error)
-//     // 如果获取用户信息失败，说明未登录，跳转到登录页
-//     router.push('/login')
-//   }
-// }
-
 // 侧边栏状态
 const sidebarCollapsed = ref(false);
-// 用户菜单状态
-const showUserMenu = ref(false);
-// 通知菜单状态
-const showNotifications = ref(false);
-// 加载状态
-const loading = ref(false);
-// 选中的社团（用于模态框）
-const selectedClub = ref<Club | null>(null);
-
-// 统计数据
-const stats = reactive({
-  joinedClubs: 3,
-  participatedActivities: 8,
-  favoriteClubs: 5,
-  unreadNotifications: 3,
-  points: 150,
-  achievementLevel: 3,
-});
-
-// 获取统计数据（暂时注释掉未使用的函数）
-// const fetchStats = async () => {
-//   try {
-//     const response = await statsApi.getUserStats()
-//     const statsData = (response as any).data || response
-//     Object.assign(stats, statsData)
-//   } catch (error) {
-//     console.error('获取统计数据失败:', error)
-//   }
-// }
-
-// 导入API服务
-import { authApi, clubApi, activityApi, statsApi } from "../api/apiService";
-
-// 推荐社团列表
-const recommendedClubs = ref<Array<Club & { isJoined?: boolean }>>([]);
-
-// 获取推荐社团（暂时注释掉未使用的函数）
-// const fetchRecommendedClubs = async () => {
-//   try {
-//     const response = await clubApi.getRecommendedClubs()
-//     const clubsData = (response as any).data || response
-//     const clubs = Array.isArray(clubsData) ? clubsData : []
-//     recommendedClubs.value = clubs.map((club: any) => ({
-//       ...club,
-//       isJoined: false // 这里可以根据实际情况判断用户是否已加入
-//     }))
-//   } catch (error) {
-//     console.error('获取推荐社团失败:', error)
-//   }
-// }
-
-// 近期活动列表
-const recentActivities = ref<
-  Array<Activity & { clubName?: string; time?: string; statusText?: string }>
->([]);
-
-// 获取近期活动（暂时注释掉未使用的函数）
-// const fetchRecentActivities = async () => {
-//   try {
-//     const response = await activityApi.getActivities({ page: 1, pageSize: 5 })
-//     const responseData = (response as any).data || response
-//     const activityList = responseData.list || []
-//     recentActivities.value = activityList.map((activity: any) => {
-//       let statusText = ''
-//       switch (activity.status) {
-//         case 0:
-//           statusText = '即将开始'
-//           break
-//         case 1:
-//           statusText = '进行中'
-//           break
-//         case 2:
-//           statusText = '已结束'
-//           break
-//       }
-//       return {
-//         ...activity,
-//         time: activity.startTime,
-//         statusText
-//       }
-//     })
-//   } catch (error) {
-//     console.error('获取近期活动失败:', error)
-//   }
-// }
-
-// 切换侧边栏
 const toggleSidebar = () => {
   sidebarCollapsed.value = !sidebarCollapsed.value;
+};
+
+// 用户信息
+const currentUser = ref<User | null>(null);
+const showUserMenu = ref(false);
+const showNotifications = ref(false);
+
+// 统计数据
+const stats = ref({
+  joinedClubs: 0,
+  participatedActivities: 0,
+  pendingApplications: 0,
+  unreadNotifications: 0,
+});
+
+// 选中的社团
+const selectedClub = ref<Club | null>(null);
+// 选中社团的活动列表
+const selectedClubActivities = ref<Activity[]>([]);
+
+// 加载用户信息
+const loadUserInfo = async () => {
+  try {
+    const userInfoStr = localStorage.getItem("userInfo");
+    if (userInfoStr) {
+      currentUser.value = JSON.parse(userInfoStr);
+    } else {
+      const response = await authApi.getCurrentUser();
+      if (response.data) {
+        currentUser.value = response.data;
+        localStorage.setItem("userInfo", JSON.stringify(response.data));
+      }
+    }
+  } catch (error) {
+    console.error("加载用户信息失败:", error);
+  }
+};
+
+// 加载统计数据（兼容 stats-service 不可用时的本地聚合）
+const loadStats = async () => {
+  try {
+    const uid = currentUser.value?.id || Number(localStorage.getItem("userId") || 0);
+
+    // 未读通知数
+    if (uid) {
+      const notificationResponse = await notificationApi.getUnreadCount(uid);
+      stats.value.unreadNotifications = Number(notificationResponse.data) || 0;
+    }
+
+    // 已加入社团数
+    if (uid) {
+      try {
+        const userClubsResp = await clubApi.getUserClubs(uid);
+        const memberList = userClubsResp.data || [];
+        stats.value.joinedClubs = Array.isArray(memberList)
+          ? memberList.filter((m: any) => m?.status === 1).length
+          : 0;
+      } catch {}
+
+      // 参与活动数
+      try {
+        const actsResp = await activityApi.getUserParticipatedActivities(uid, {
+          page: 1,
+          size: 50,
+        });
+        const rd = actsResp.data;
+        const contentCandidates = [
+          rd?.data?.content,
+          rd?.data?.list,
+          rd?.content,
+          rd?.list,
+          rd?.items,
+          rd?.records,
+          Array.isArray(rd) ? rd : null,
+        ];
+        const arr = contentCandidates.find((c: any) => Array.isArray(c)) || [];
+        stats.value.participatedActivities = arr.length || 0;
+      } catch {}
+
+      // 待处理申请（社团）
+      try {
+        const appliesResp = await axiosInstance.get(`/clubs/applications/user/${uid}`);
+        const list = Array.isArray(appliesResp.data)
+          ? appliesResp.data
+          : Array.isArray(appliesResp.data?.data)
+          ? appliesResp.data.data
+          : [];
+        stats.value.pendingApplications = list.filter((x: any) => x?.status === 0).length;
+      } catch {}
+    }
+  } catch (error) {
+    console.error("加载统计数据失败:", error);
+  }
 };
 
 // 切换用户菜单
 const toggleUserMenu = () => {
   showUserMenu.value = !showUserMenu.value;
-  showNotifications.value = false; // 关闭通知菜单
+  showNotifications.value = false;
 };
 
 // 切换通知菜单
 const toggleNotifications = () => {
   showNotifications.value = !showNotifications.value;
-  showUserMenu.value = false; // 关闭用户菜单
+  showUserMenu.value = false;
 };
 
-// 关闭所有下拉菜单（备用函数）
-
-// 退出登录
-const logout = () => {
-  localStorage.removeItem("userToken");
-  router.push("/login");
-};
-
-// 显示社团详情模态框
-const showClubModal = (club: Club) => {
+// 打开社团详情模态框
+const openClubModal = async (club: Club) => {
   selectedClub.value = club;
+  selectedClubActivities.value = [];
+
+  // 获取社团活动列表
+  if (club.id) {
+    try {
+      const response = await activityApi.getClubActivities(club.id, { page: 1, size: 5 });
+      const activities =
+        response.data?.data?.content || response.data?.data || response.data || [];
+      selectedClubActivities.value = Array.isArray(activities) ? activities : [];
+    } catch (error) {
+      console.error("获取社团活动失败:", error);
+      selectedClubActivities.value = [];
+    }
+  }
 };
 
 // 关闭社团详情模态框
 const closeClubModal = () => {
   selectedClub.value = null;
+  selectedClubActivities.value = [];
 };
 
-// 初始化图表
-const initChart = async () => {
-  const chartContainer = document.getElementById("activityChart");
-  if (chartContainer) {
-    try {
-      // 获取活动统计数据
-      const response = await statsApi.getActivityStats();
-      const statsData = (response as any).data || response;
-
-      // 模拟图表渲染
-      chartContainer.innerHTML = `
-        <div style="height: 250px; display: flex; align-items: center; justify-content: center;">
-          <canvas id="activityChartCanvas" width="400" height="200"></canvas>
-        </div>
-      `;
-
-      // 简单的图表绘制
-      const canvas = document.getElementById("activityChartCanvas") as HTMLCanvasElement;
-      if (canvas) {
-        const ctx = canvas.getContext("2d");
-        if (ctx) {
-          // 使用后端返回的数据或默认数据
-          const data = statsData?.monthlyActivities || [12, 19, 15, 22, 18, 25, 20];
-          const colors = [
-            "#667eea",
-            "#48bb78",
-            "#ed64a6",
-            "#ed8936",
-            "#4299e1",
-            "#9f7aea",
-            "#4fd1c5",
-          ];
-
-          const barWidth = 30;
-          const startX = 50;
-          const startY = 180;
-          const maxHeight = 150;
-
-          // 绘制坐标轴
-          ctx.beginPath();
-          ctx.moveTo(startX, 20);
-          ctx.lineTo(startX, startY);
-          ctx.lineTo(380, startY);
-          ctx.stroke();
-
-          // 绘制柱子
-          data.forEach((value: number, index: number) => {
-            const barHeight = (value / Math.max(...data)) * maxHeight;
-            const x = startX + 50 + index * (barWidth + 15);
-            const y = startY - barHeight;
-
-            // 确保颜色存在
-            const color = colors[index] || "#666666";
-            ctx.fillStyle = color;
-            ctx.fillRect(x, y, barWidth, barHeight);
-
-            // 绘制数值
-            ctx.fillStyle = "#333";
-            ctx.font = "12px Arial";
-            ctx.textAlign = "center";
-            ctx.fillText(value.toString(), x + barWidth / 2, y - 5);
-          });
-
-          // 绘制标签
-          const labels = ["1月", "2月", "3月", "4月", "5月", "6月", "7月"];
-          labels.forEach((label, index) => {
-            const x = startX + 50 + index * (barWidth + 15);
-            ctx.fillText(label, x + barWidth / 2, startY + 20);
-          });
-        }
-      }
-    } catch (error) {
-      console.error("获取图表数据失败:", error);
-      // 如果API调用失败，显示默认图表
-      chartContainer.innerHTML = `
-        <div style="height: 250px; display: flex; align-items: center; justify-content: center; color: #666;">
-          图表数据加载失败
-        </div>
-      `;
-    }
+// 退出登录
+const logout = async () => {
+  try {
+    await authApi.logout();
+  } catch (error) {
+    console.error("退出登录失败:", error);
+  } finally {
+    router.push("/login");
   }
 };
 
-// 监听点击外部区域关闭下拉菜单
-onMounted(() => {
-  const handleClickOutside = (event: MouseEvent) => {
-    const userInfo = document.querySelector(".user-info");
-    const userDropdown = document.querySelector(".user-dropdown");
-    const notificationIcon = document.querySelector(".notification-icon");
-    const notificationsDropdown = document.querySelector(".notifications-dropdown");
+// 初始化
+onMounted(async () => {
+  await loadUserInfo();
+  await loadStats();
 
-    // 检查点击是否在用户信息区域外部
-    if (
-      userInfo &&
-      userDropdown &&
-      !userInfo.contains(event.target as Node) &&
-      !userDropdown.contains(event.target as Node)
-    ) {
+  // 点击外部关闭菜单
+  document.addEventListener("click", (e) => {
+    const target = e.target as HTMLElement;
+    if (!target.closest(".user-profile")) {
       showUserMenu.value = false;
-    }
-
-    // 检查点击是否在通知图标区域外部
-    if (
-      notificationIcon &&
-      notificationsDropdown &&
-      !notificationIcon.contains(event.target as Node) &&
-      !notificationsDropdown.contains(event.target as Node)
-    ) {
       showNotifications.value = false;
     }
-  };
-
-  document.addEventListener("click", handleClickOutside);
-
-  // 初始化图表
-  nextTick(() => {
-    initChart();
   });
-
-  // 获取用户数据和统计信息
-  fetchUserInfo();
-  fetchStats();
-  fetchRecommendedClubs();
-  fetchRecentActivities();
 });
-
-// 获取用户信息
-const fetchUserInfo = async () => {
-  loading.value = true;
-  try {
-    const response = await authApi.getCurrentUser();
-    const userInfo = response.data || response;
-    // 更新当前用户信息
-    currentUser.value = userInfo;
-  } catch (error) {
-    console.error("获取用户信息失败:", error);
-    // 显示错误提示
-  } finally {
-    loading.value = false;
-  }
-};
-
-// 获取统计数据
-const fetchStats = async () => {
-  loading.value = true;
-  try {
-    const response = await statsApi.getUserStats();
-    const statsData = response.data || response;
-    Object.assign(stats, statsData);
-  } catch (error) {
-    console.error("获取统计数据失败:", error);
-    // 使用模拟数据
-  } finally {
-    loading.value = false;
-  }
-};
-
-// 获取推荐社团
-const fetchRecommendedClubs = async () => {
-  loading.value = true;
-  try {
-    const response = await clubApi.getRecommendedClubs();
-    const clubsData = response.data || response;
-    const clubs = Array.isArray(clubsData) ? clubsData : [];
-    recommendedClubs.value = clubs.map((club: any) => ({
-      ...club,
-      isJoined: false, // 这里可以根据实际情况判断用户是否已加入
-    }));
-  } catch (error) {
-    console.error("获取推荐社团失败:", error);
-    // 使用模拟数据
-  } finally {
-    loading.value = false;
-  }
-};
-
-// 获取近期活动
-const fetchRecentActivities = async () => {
-  loading.value = true;
-  try {
-    const response = await activityApi.getActivities({ page: 1, pageSize: 5 });
-    const responseData = response.data || response;
-    const activityList = responseData.list || [];
-    recentActivities.value = activityList.map((activity: any) => {
-      let statusText = "";
-      switch (activity.status) {
-        case 0:
-          statusText = "即将开始";
-          break;
-        case 1:
-          statusText = "进行中";
-          break;
-        case 2:
-          statusText = "已结束";
-          break;
-      }
-      return {
-        ...activity,
-        time: activity.startTime,
-        statusText,
-      };
-    });
-  } catch (error) {
-    console.error("获取近期活动失败:", error);
-    // 使用模拟数据
-  } finally {
-    loading.value = false;
-  }
-};
 </script>
 
 <style scoped>
@@ -747,7 +450,7 @@ const fetchRecentActivities = async () => {
   overflow: hidden;
 }
 
-.sidebar.collapsed {
+.sidebar.sidebar-collapsed {
   width: 60px;
 }
 

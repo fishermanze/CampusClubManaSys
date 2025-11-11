@@ -4,13 +4,13 @@ import type { RouteRecordRaw } from 'vue-router'
 const routes: Array<RouteRecordRaw> = [
   {
     path: '/',
-    redirect: '/login'
+    redirect: '/home'
   },
   // 404页面
   {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
-    redirect: '/login'
+    redirect: '/home'
   },
   {
     path: '/login',
@@ -22,6 +22,42 @@ const routes: Array<RouteRecordRaw> = [
     path: '/home',
     name: 'Home',
     component: () => import('@/views/HomeView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/my-clubs',
+    name: 'MyClubs',
+    component: () => import('@/views/MyClubsView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/activities',
+    name: 'Activities',
+    component: () => import('@/views/ActivitiesView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/applications',
+    name: 'Applications',
+    component: () => import('@/views/ApplicationsView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/notifications',
+    name: 'Notifications',
+    component: () => import('@/views/NotificationsView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/profile',
+    name: 'Profile',
+    component: () => import('@/views/ProfileView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/settings',
+    name: 'Settings',
+    component: () => import('@/views/SettingsView.vue'),
     meta: { requiresAuth: true }
   }
 ]

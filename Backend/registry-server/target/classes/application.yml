@@ -1,0 +1,23 @@
+server:
+  port: 8761
+
+spring:
+  application:
+    name: registry-server
+
+# Eureka配置
+eureka:
+  instance:
+    hostname: localhost
+  client:
+    # 是否向自己注册
+    registerWithEureka: false
+    # 是否从自己获取注册信息
+    fetchRegistry: false
+    serviceUrl:
+      defaultZone: http://${eureka.instance.hostname}:${server.port}/eureka/
+  server:
+    # 关闭自我保护机制
+    enableSelfPreservation: false
+    # 清理无效节点的时间间隔（毫秒）
+    evictionIntervalTimerInMs: 5000

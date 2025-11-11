@@ -15,20 +15,20 @@ export default defineConfig({
     }
   },
   server: {
-    port: 3000, // 修改为3001端口，与nginx配置保持一致
+    port: 3000, 
     open: true,
     host: true, // 监听所有IP地址
     strictPort: true, // 使用严格端口，避免自动切换
     hmr: {
       protocol: 'ws',
       host: 'localhost',
-      clientPort: 8080, // 客户端通过Nginx的8080端口连接WebSocket
+      
       overlay: true, // 显示错误覆盖层
     },
     // 代理配置，用于连接后端服务
     proxy: {
       '/api': {
-        target: 'http://localhost:8000', // 后端服务地址
+        target: 'http://localhost:8080', // 后端服务地址
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, '')
       }

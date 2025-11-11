@@ -3,167 +3,157 @@
 // 用户相关接口
 export const authApi = {
   // 用户登录
-  login: '/api/auth/login',
+  login: '/auth/login',
   // 用户登出
-  logout: '/api/auth/logout',
+  logout: '/auth/logout',
   // 获取当前用户信息
-  getCurrentUser: '/api/auth/current-user',
+  getCurrentUser: '/auth/current-user',
   // 用户注册
-  register: '/api/auth/register',
+  register: '/auth/register',
   // 修改密码
-  changePassword: '/api/auth/change-password',
+  changePassword: '/auth/change-password',
   // 刷新Token
-  refreshToken: '/api/auth/refresh'
+  refreshToken: '/auth/refresh'
 };
 
 // 社团相关接口
 export const clubApi = {
   // 获取社团列表
-  getClubs: '/api/club/list',
+  getClubs: '/club/list',
   // 获取社团详情
-  getClubById: (id: number) => `/api/club/${id}`,
+  getClubById: (id: number) => `/club/${id}`,
   // 创建社团
-  createClub: '/api/club/create',
-  // 申请加入社团
-  applyJoinClub: '/api/club/apply',
-  // 获取待审批申请列表
-  getPendingApplies: '/api/club/apply/pending',
-  // 处理申请
-  handleClubApply: '/api/club/apply/handle',
+  createClub: '/club/create',
+  // 申请加入社团（调整为后端实际路由：POST /clubs/applications/{clubId}）
+  applyJoinClub: (clubId: number) => `/clubs/applications/${clubId}`,
+  // 获取某社团的待审批申请列表（调整为后端实际路由：GET /clubs/applications/club/{clubId}?status=0）
+  getPendingApplies: (clubId: number) => `/clubs/applications/club/${clubId}?status=0`,
+  // 审核入团申请（调整为后端实际路由：PUT /clubs/{clubId}/members/{userId}/approve`）
+  handleClubApply: (clubId: number, userId: number) => `/clubs/${clubId}/members/${userId}/approve`,
+  // 获取某用户的社团申请列表（新增：GET /clubs/applications/user/{userId}）
+  getUserApplies: (userId: number) => `/clubs/applications/user/${userId}`,
   // 踢出成员
-  kickMember: '/api/club/kick',
+  kickMember: '/club/kick',
   // 获取用户加入的社团
-  getUserClubs: '/api/club/my-clubs',
+  getUserClubs: '/club/my-clubs',
   // 获取社团成员列表
-  getClubMembers: (clubId: number) => `/api/club/${clubId}/members`,
+  getClubMembers: (clubId: number) => `/club/${clubId}/members`,
   // 获取社团成员数量
-  getClubMemberCount: (clubId: number) => `/api/club/${clubId}/member-count`
+  getClubMemberCount: (clubId: number) => `/club/${clubId}/member-count`
 };
 
 // 活动相关接口
 export const activityApi = {
   // 获取活动列表
-  getActivities: '/api/activities',
+  getActivities: '/activities',
   // 获取活动详情
-  getActivityById: (id: number) => `/api/activities/${id}`,
+  getActivityById: (id: number) => `/activities/${id}`,
   // 创建活动
-  createActivity: '/api/activities',
+  createActivity: '/activities',
   // 更新活动信息
-  updateActivity: (id: number) => `/api/activities/${id}`,
+  updateActivity: (id: number) => `/activities/${id}`,
   // 删除活动
-  deleteActivity: (id: number) => `/api/activities/${id}`,
+  deleteActivity: (id: number) => `/activities/${id}`,
   // 报名参加活动
-  joinActivity: (id: number) => `/api/activities/${id}/join`,
+  joinActivity: (id: number) => `/activities/${id}/join`,
   // 取消活动报名
-  cancelJoinActivity: (id: number) => `/api/activities/${id}/cancel`,
+  cancelJoinActivity: (id: number) => `/activities/${id}/cancel`,
   // 获取用户参加的活动
-  getUserActivities: '/api/activities/user',
+  getUserActivities: '/activities/user',
   // 获取社团的活动
-  getClubActivities: (clubId: number) => `/api/clubs/${clubId}/activities`,
+  getClubActivities: (clubId: number) => `/clubs/${clubId}/activities`,
   // 搜索活动
-  searchActivities: '/api/activities/search',
+  searchActivities: '/activities/search',
   // 获取即将开始的活动
-  getUpcomingActivities: '/api/activities/upcoming',
+  getUpcomingActivities: '/activities/upcoming',
   // 获取热门活动
-  getPopularActivities: '/api/activities/popular'
+  getPopularActivities: '/activities/popular'
 };
 
 // 统计相关接口
 export const statsApi = {
   // 获取用户统计信息
-  getUserStats: '/api/stats/user',
+  getUserStats: '/stats/user',
   // 获取活动统计信息
-  getActivityStats: '/api/stats/activities',
+  getActivityStats: '/stats/activities',
   // 获取社团统计信息
-  getClubStats: '/api/stats/clubs',
+  getClubStats: '/stats/clubs',
   // 获取整体平台统计信息
-  getOverallStats: '/api/stats/overall',
+  getOverallStats: '/stats/overall',
   // 获取活跃度统计
-  getActivityTrend: '/api/stats/trends/activity',
+  getActivityTrend: '/stats/trends/activity',
   // 获取用户增长统计
-  getUserGrowth: '/api/stats/trends/users',
+  getUserGrowth: '/stats/trends/users',
   // 获取分类统计
-  getCategoryStats: '/api/stats/categories'
+  getCategoryStats: '/stats/categories'
 };
 
 // 收藏相关接口
 export const favoriteApi = {
   // 获取收藏列表
-  getFavorites: '/api/favorites',
+  getFavorites: '/favorites',
   // 添加收藏
-  addFavorite: '/api/favorites',
+  addFavorite: '/favorites',
   // 移除收藏
-  removeFavorite: (id: number) => `/api/favorites/${id}`,
+  removeFavorite: (id: number) => `/favorites/${id}`,
   // 检查是否已收藏
-  checkFavorite: (type: 'club' | 'activity', id: number) => `/api/favorites/check?type=${type}&id=${id}`
+  checkFavorite: (type: 'club' | 'activity', id: number) => `/favorites/check?type=${type}&id=${id}`
 };
 
 // 消息相关接口
 export const messageApi = {
   // 获取消息列表
-  getMessages: '/api/messages',
+  getMessages: '/messages',
   // 获取未读消息数量
-  getUnreadCount: '/api/messages/unread',
+  getUnreadCount: '/messages/unread',
   // 标记消息已读
-  markAsRead: (id: number) => `/api/messages/${id}/read`,
+  markAsRead: (id: number) => `/messages/${id}/read`,
   // 标记所有消息已读
-  markAllAsRead: '/api/messages/read-all',
+  markAllAsRead: '/messages/read-all',
   // 发送消息
-  sendMessage: '/api/messages',
+  sendMessage: '/messages',
   // 删除消息
-  deleteMessage: (id: number) => `/api/messages/${id}`
+  deleteMessage: (id: number) => `/messages/${id}`
 };
 
 // 评论相关接口
 export const commentApi = {
   // 获取评论列表
-  getComments: (type: 'club' | 'activity', id: number) => `/api/${type}s/${id}/comments`,
+  getComments: (type: 'club' | 'activity', id: number) => `/${type}s/${id}/comments`,
   // 添加评论
-  addComment: (type: 'club' | 'activity', id: number) => `/api/${type}s/${id}/comments`,
+  addComment: (type: 'club' | 'activity', id: number) => `/${type}s/${id}/comments`,
   // 删除评论
-  deleteComment: (commentId: number) => `/api/comments/${commentId}`,
+  deleteComment: (commentId: number) => `/comments/${commentId}`,
   // 点赞评论
-  likeComment: (commentId: number) => `/api/comments/${commentId}/like`,
+  likeComment: (commentId: number) => `/comments/${commentId}/like`,
   // 取消点赞评论
-  unlikeComment: (commentId: number) => `/api/comments/${commentId}/unlike`
-};
-
-// AI推荐相关接口
-export const aiRecommendApi = {
-  // 获取活动推荐
-  getActivityRecommendations: '/api/ai/recommend/activities',
-  // 获取社团推荐
-  getClubRecommendations: '/api/ai/recommend/clubs',
-  // 基于兴趣的推荐
-  getRecommendationsByInterests: '/api/ai/recommend/interests',
-  // 获取相似内容推荐
-  getSimilarItems: (type: 'club' | 'activity', id: number) => `/api/ai/recommend/similar?type=${type}&id=${id}`
+  unlikeComment: (commentId: number) => `/comments/${commentId}/unlike`
 };
 
 // 搜索相关接口
 export const searchApi = {
   // 全局搜索
-  globalSearch: '/api/search',
+  globalSearch: '/search',
   // 高级搜索
-  advancedSearch: '/api/search/advanced',
+  advancedSearch: '/search/advanced',
   // 获取搜索历史
-  getSearchHistory: '/api/search/history',
+  getSearchHistory: '/search/history',
   // 清除搜索历史
-  clearSearchHistory: '/api/search/history/clear',
+  clearSearchHistory: '/search/history/clear',
   // 获取热门搜索
-  getPopularSearches: '/api/search/popular'
+  getPopularSearches: '/search/popular'
 };
 
 // 标签相关接口
 export const tagApi = {
   // 获取所有标签
-  getTags: '/api/tags',
+  getTags: '/tags',
   // 获取热门标签
-  getPopularTags: '/api/tags/popular',
+  getPopularTags: '/tags/popular',
   // 添加标签
-  addTag: '/api/tags',
+  addTag: '/tags',
   // 删除标签
-  deleteTag: (id: number) => `/api/tags/${id}`
+  deleteTag: (id: number) => `/tags/${id}`
 };
 
 // 导出所有API接口
@@ -175,7 +165,6 @@ export default {
   favorite: favoriteApi,
   message: messageApi,
   comment: commentApi,
-  aiRecommend: aiRecommendApi,
   search: searchApi,
   tag: tagApi
 };

@@ -34,7 +34,7 @@ declare global {
 
 // 创建axios实例
 const axiosInstance: AxiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api', // 使用环境变量配置
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api', // 使用环境变量配置
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json'
@@ -64,25 +64,32 @@ const refreshToken = async (): Promise<string> => {
     // 使用axiosInstance调用刷新接口，并添加skipAuthRefresh标志避免递归
     // 创建一个新的axios实例来避免拦截器递归
     const refreshInstance = axios.create({
-      baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api',
+      baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api',
       timeout: 10000
     })
     
-    const response = await refreshInstance.post('/api/auth/refresh', {}, {
+    const response = await refreshInstance.post('/auth/refresh', {}, {
       params: { oldToken: accessToken }
     })
 
     const responseData = response.data
     
-    if (!responseData.success || !responseData.data || !responseData.data.token) {
+    if (!responseData.success || !responseData.data || !responseData.data.accessToken) {
       console.error('Invalid token response')
       logout()
       return ''
     }
     
-    const newToken = responseData.data.token
+    const newToken = responseData.data.accessToken
+    const user = responseData.data.user || {};
     // 存储新token
-    storeTokens(newToken, responseData.data)
+    storeTokens(newToken, {
+      userId: user.id,
+      username: user.username,
+      role: user.role,
+      realName: user.name,
+      ...user
+    })
     console.log('Token refreshed successfully')
     
     return newToken
@@ -124,14 +131,21 @@ axiosInstance.interceptors.request.use(
     
     // 跳过登录相关接口的token检查
     // 跳过认证相关接口的token检查
-    // 注意：这里直接使用路径字符串而不是apiInterface中的值，因为apiInterface中可能包含/api前缀
-    const authPaths = [
+  const authPaths = [
+      // 不带 /api 的路径（与本实例 baseURL = /api 组合后有效）
       '/auth/login',
       '/auth/register',
       '/auth/refresh',
       '/auth/login/code',
       '/auth/send-code',
-      '/auth/reset-password'
+      '/auth/reset-password',
+      // 兼容带 /api 的路径（以防部分调用显式传入以 /api 开头的 url）
+      '/api/auth/login',
+      '/api/auth/register',
+      '/api/auth/refresh',
+      '/api/auth/login/code',
+      '/api/auth/send-code',
+      '/api/auth/reset-password'
     ]
     
     if (authPaths.some(path => config.url?.includes(path)) || skipAuthRefresh) {

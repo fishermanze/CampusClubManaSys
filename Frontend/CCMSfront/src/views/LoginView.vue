@@ -257,7 +257,8 @@ const handleRegister = async () => {
     !registerForm.value.username ||
     !registerForm.value.realName ||
     !registerForm.value.uid ||
-    !registerForm.value.password
+    !registerForm.value.password ||
+    !registerForm.value.confirmPassword
   ) {
     showNotification("请填写完整的注册信息", "error");
     return;
@@ -284,6 +285,11 @@ const handleRegister = async () => {
     await authApi.register(registerData);
 
     showNotification("注册成功，请登录", "success");
+    registerForm.value.confirmPassword = "";
+    registerForm.value.password = "";
+    registerForm.value.realName = "";
+    registerForm.value.uid = "";
+    registerForm.value.username = "";
 
     // 切换到登录表单
     setTimeout(() => {

@@ -15,17 +15,17 @@ export const authApi = {
         password: data.password
       };
       // 使用正确的API路径
-      const response = await axiosInstance.post('/api/auth/login', loginData);
+      const response = await axiosInstance.post('/auth/login', loginData);
       // 存储token到本地存储
       const responseData = response.data || {};
       console.log('Login response:', responseData);
       
       // 根据后端返回格式处理数据
-      if (responseData.success && responseData.data) {
-        const { token, user } = responseData.data;
-        if (token && user) {
+      if (responseData.message=="success" && responseData.data) {
+        const { accessToken, user } = responseData.data;
+        if (accessToken && user) {
           // 使用统一的token存储函数
-          storeTokens(token, {
+          storeTokens(accessToken, {
             userId: user.id,
             username: user.username,
             realName: user.name,
@@ -84,7 +84,8 @@ export const authApi = {
       username: data.username,
       password: data.password,
       uid: data.uid, // 使用正确的uid字段
-      realName: data.realName
+      realName: data.realName,
+      confirmPassword:data.confirmPassword
     };
     // 使用正确的API路径
     const response = axiosInstance.post('/auth/register', registerData);
@@ -158,9 +159,26 @@ export const authApi = {
 
 // 社团相关API
 export const clubApi = {
-  // 获取推荐社团列表
-  getRecommendedClubs: () => {
-    return axiosInstance.get('/clubs/recommended')
+  // 获取全部社团列表
+  getAllClubs: () => {
+    return axiosInstance.get('/clubs')
+  },
+
+  // 提交入团申请（包含申请信息）
+  applyToClub: (clubId: number, payload: {
+    userId: number
+    realName: string
+    gender: string
+    major: string
+    className: string
+    reason?: string
+  }) => {
+    return axiosInstance.post(`/clubs/applications/${clubId}`, payload)
+  },
+
+  // 获取用户加入的社团（返回成员记录列表）
+  getUserClubs: (userId: number) => {
+    return axiosInstance.get(`/clubs/user/${userId}`)
   },
   
   // 获取社团详情
@@ -168,19 +186,19 @@ export const clubApi = {
     return axiosInstance.get(`/clubs/${clubId}`)
   },
   
-  // 获取社团活动列表
-  getClubActivities: (clubId: number) => {
-    return axiosInstance.get(`/clubs/${clubId}/activities`)
-  },
-  
-  // 加入社团
-  joinClub: (clubId: number) => {
-    return axiosInstance.post(`/clubs/${clubId}/join`)
+  // 加入社团（提交申请，后端以成员状态流转）
+  joinClub: (clubId: number, userId: number) => {
+    return axiosInstance.post(`/clubs/${clubId}/members`, null, { params: { userId } })
   },
   
   // 退出社团
-  leaveClub: (clubId: number) => {
-    return axiosInstance.post(`/clubs/${clubId}/leave`)
+  leaveClub: (clubId: number, userId: number) => {
+    return axiosInstance.delete(`/clubs/${clubId}/members/${userId}`)
+  },
+  
+  // 获取社团成员列表
+  getClubMembers: (clubId: number) => {
+    return axiosInstance.get(`/clubs/${clubId}/members`)
   }
 }
 
@@ -189,9 +207,8 @@ export const activityApi = {
   // 获取活动列表
   getActivities: (params?: {
     page?: number
-    pageSize?: number
-    status?: number
-    keyword?: string
+    size?: number
+    sort?: string
   }) => {
     return axiosInstance.get('/activities', { params })
   },
@@ -201,14 +218,141 @@ export const activityApi = {
     return axiosInstance.get(`/activities/${activityId}`)
   },
   
-  // 报名参加活动
-  joinActivity: (activityId: number) => {
-    return axiosInstance.post(`/activities/${activityId}/join`)
+  // 创建活动
+  createActivity: (activityData: any) => {
+    return axiosInstance.post('/activities', activityData)
   },
   
-  // 取消活动报名
-  cancelActivity: (activityId: number) => {
-    return axiosInstance.post(`/activities/${activityId}/cancel`)
+  // 更新活动
+  updateActivity: (activityId: number, activityData: any) => {
+    return axiosInstance.put(`/activities/${activityId}`, activityData)
+  },
+  
+  // 删除活动
+  deleteActivity: (activityId: number) => {
+    return axiosInstance.delete(`/activities/${activityId}`)
+  },
+  
+  // 更新活动状态
+  updateActivityStatus: (activityId: number, status: number) => {
+    return axiosInstance.put(`/activities/${activityId}/status`, {}, { params: { status } })
+  },
+  
+  // 获取社团活动列表
+  getClubActivities: (clubId: number, params?: {
+    page?: number
+    size?: number
+    sort?: string
+  }) => {
+    return axiosInstance.get(`/activities/club/${clubId}`, { params })
+  },
+  
+  // 获取用户参与的活动
+  getUserParticipatedActivities: (userId: number, params?: {
+    page?: number
+    size?: number
+  }) => {
+    return axiosInstance.get(`/activities/user/${userId}/participated`, { params })
+  },
+  
+  // 获取用户创建的活动
+  getUserCreatedActivities: (userId: number, params?: {
+    page?: number
+    size?: number
+  }) => {
+    return axiosInstance.get(`/activities/user/${userId}/created`, { params })
+  },
+  
+  // 搜索活动
+  searchActivities: (keyword: string, params?: {
+    page?: number
+    size?: number
+  }) => {
+    return axiosInstance.get('/activities/search', { params: { keyword, ...params } })
+  },
+  
+  // 获取即将开始的活动
+  getUpcomingActivities: (limit?: number) => {
+    return axiosInstance.get('/activities/upcoming', { params: { limit } })
+  },
+  
+  // 获取正在进行的活动
+  getCurrentActivities: (limit?: number) => {
+    return axiosInstance.get('/activities/current', { params: { limit } })
+  },
+  
+  // 根据标签获取活动
+  getActivitiesByTag: (tag: string, params?: {
+    page?: number
+    size?: number
+  }) => {
+    return axiosInstance.get(`/activities/tag/${tag}`, { params })
+  },
+  
+  // 增加浏览量
+  incrementViewCount: (activityId: number) => {
+    return axiosInstance.post(`/activities/${activityId}/view`)
+  },
+  
+  // 点赞活动
+  likeActivity: (activityId: number) => {
+    return axiosInstance.post(`/activities/${activityId}/like`)
+  },
+  
+  // 取消点赞活动
+  unlikeActivity: (activityId: number) => {
+    return axiosInstance.delete(`/activities/${activityId}/like`)
+  },
+  
+  // 获取活动统计
+  getActivityStatistics: (clubId: number) => {
+    return axiosInstance.get(`/activities/statistics/club/${clubId}`)
+  }
+}
+
+// 评论相关API
+export const commentApi = {
+  // 获取活动热门评论
+  getHotComments: (activityId: number, limit: number = 5) => {
+    return axiosInstance.get(`/comments/activity/${activityId}/hot`, { params: { limit } })
+  },
+  
+  // 获取活动评论列表
+  getActivityComments: (activityId: number, params?: {
+    page?: number
+    size?: number
+    sort?: string
+  }) => {
+    return axiosInstance.get(`/comments/activity/${activityId}`, { params })
+  },
+  
+  // 创建评论
+  createComment: (commentData: {
+    activityId: number
+    content: string
+    parentId?: number
+  }) => {
+    return axiosInstance.post('/comments', commentData)
+  },
+  
+  // 点赞评论
+  likeComment: (commentId: number) => {
+    return axiosInstance.post(`/comments/${commentId}/like`)
+  },
+  
+  // 取消点赞评论
+  unlikeComment: (commentId: number) => {
+    return axiosInstance.delete(`/comments/${commentId}/like`)
+  },
+  
+  // 获取评论的回复
+  getCommentReplies: (commentId: number) => {
+    return axiosInstance.get(`/comments/${commentId}/replies`)
+  },
+  
+  // 删除评论
+  deleteComment: (commentId: number) => {
+    return axiosInstance.delete(`/comments/${commentId}`)
   }
 }
 
@@ -226,12 +370,69 @@ export const statsApi = {
     type?: string
   }) => {
     return axiosInstance.get('/stats/activities', { params })
+  },
+  
+  // 获取活跃度趋势统计
+  getActivityTrend: (params?: {
+    period?: string // 'week', 'month', 'year'
+    startDate?: string
+    endDate?: string
+  }) => {
+    return axiosInstance.get('/stats/trends/activity', { params })
   }
 }
+
+// 用户社交相关API
+export const userSocialApi = {
+  // 获取用户关注的人
+  getFollowing: (userId: string) => axiosInstance.get(`/users/${userId}/following`),
+  
+  // 获取关注用户的人
+  getFollowers: (userId: string) => axiosInstance.get(`/users/${userId}/followers`),
+  
+  // 关注用户
+  followUser: (userId: string) => axiosInstance.post(`/users/${userId}/follow`),
+  
+  // 取消关注用户
+  unfollowUser: (userId: string) => axiosInstance.delete(`/users/${userId}/follow`),
+  
+  // 获取共同关注
+  getCommonFollowings: (userId1: string, userId2: string) => 
+    axiosInstance.get(`/users/common-followings?userId1=${userId1}&userId2=${userId2}`)
+};
+
+// 通知相关API
+export const notificationApi = {
+  // 获取未读通知数量
+  getUnreadCount: (userId: number) => {
+    return axiosInstance.get(`/notifications/user/${userId}/unread-count`)
+  },
+  
+  // 获取通知列表
+  getNotifications: (userId: number, params?: {
+    page?: number
+    size?: number
+    type?: number
+  }) => {
+    return axiosInstance.get(`/notifications/user/${userId}`, { params })
+  },
+  
+  // 标记通知为已读
+  markAsRead: (notificationId: number, userId: number) => {
+    return axiosInstance.put(`/notifications/${notificationId}/read`, null, { params: { userId } })
+  },
+  
+  // 标记所有通知为已读
+  markAllAsRead: (userId: number) => {
+    return axiosInstance.put(`/notifications/user/${userId}/read-all`)
+  }
+};
 
 export default {
   auth: authApi,
   club: clubApi,
   activity: activityApi,
-  stats: statsApi
+  stats: statsApi,
+  userSocial: userSocialApi,
+  notification: notificationApi
 }
