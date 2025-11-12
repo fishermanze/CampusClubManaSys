@@ -48,6 +48,12 @@
             </router-link>
           </li>
           <li class="nav-item">
+            <router-link to="/ai-assistant" class="nav-link">
+              <i class="fa fa-comments"></i>
+              <span :class="{ hidden: sidebarCollapsed }">AI助手</span>
+            </router-link>
+          </li>
+          <li class="nav-item">
             <router-link to="/settings" class="nav-link">
               <i class="fa fa-cog"></i>
               <span :class="{ hidden: sidebarCollapsed }">设置</span>
