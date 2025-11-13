@@ -2,20 +2,29 @@ package com.campusclub.activity.service.impl;
 
 import com.campusclub.activity.dto.ActivityParticipantDTO;
 import com.campusclub.activity.dto.CheckInStatisticsDTO;
+import com.campusclub.activity.entity.Activity;
 import com.campusclub.activity.entity.ActivityParticipant;
 import com.campusclub.activity.repository.ActivityParticipantRepository;
 import com.campusclub.activity.repository.ActivityRepository;
 import com.campusclub.activity.service.ActivityParticipantService;
-import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
+import java.time.Duration;
+import java.util.Objects;
 
 @Service
 public class ActivityParticipantServiceImpl implements ActivityParticipantService {
@@ -27,36 +36,210 @@ public class ActivityParticipantServiceImpl implements ActivityParticipantServic
     private ActivityRepository activityRepository;
 
     @Autowired
-    private ModelMapper modelMapper;
+    private RestTemplate restTemplate;
+
+    @Autowired
+    private StringRedisTemplate stringRedisTemplate;
+
+    private static final String ENROLL_LOCK_PREFIX = "lock:activity:enroll:";
+    private static final Duration DEFAULT_LOCK_WAIT = Duration.ofSeconds(3);
+    private static final Duration DEFAULT_LOCK_LEASE = Duration.ofSeconds(10);
 
     @Override
     @Transactional
     public ActivityParticipant enrollActivity(ActivityParticipant participant) {
         // 使用getter方法获取属性值
-        Long activityId = participant.getActivityId();
-        Long userId = participant.getUserId();
+        Long activityIdObj = Objects.requireNonNull(participant.getActivityId(), "活动ID不能为空");
+        Long userIdObj = Objects.requireNonNull(participant.getUserId(), "用户ID不能为空");
+        long activityId = activityIdObj.longValue();
+        long userId = userIdObj.longValue();
 
-        // 检查活动是否存在
-        if (!activityRepository.existsById(activityId)) {
-            throw new RuntimeException("活动不存在");
+        String lockKey = ENROLL_LOCK_PREFIX + activityId;
+        String lockValue = UUID.randomUUID().toString();
+        if (!acquireLock(lockKey, lockValue, DEFAULT_LOCK_WAIT, DEFAULT_LOCK_LEASE)) {
+            throw new RuntimeException("系统繁忙，请稍后再试");
         }
 
-        // 检查是否已参与
-        if (participantRepository.existsByActivityIdAndUserId(activityId, userId)) {
-            throw new RuntimeException("您已参与该活动");
+        try {
+            Activity activity = activityRepository.findById(activityIdObj)
+                    .orElseThrow(() -> new RuntimeException("活动不存在"));
+
+            if (activity.getMaxParticipants() != null && activity.getCurrentParticipants() != null
+                    && activity.getCurrentParticipants() >= activity.getMaxParticipants()) {
+                throw new RuntimeException("活动名额已满");
+            }
+
+            if (participantRepository.existsByActivityIdAndUserId(activityIdObj, userIdObj)) {
+                throw new RuntimeException("您已参与该活动");
+            }
+
+            participant.setEnrollmentTime(LocalDateTime.now());
+
+            if (userId == 1L) {
+                participant.setStatus(1); // 1-已通过
+                participant.setApprovalTime(LocalDateTime.now());
+                participant.setApprovedBy(1L);
+            } else {
+                participant.setStatus(0); // 0-待审批
+                sendEnrollmentNotification(activity, userIdObj);
+            }
+
+            ActivityParticipant saved;
+            try {
+                saved = participantRepository.save(participant);
+            } catch (OptimisticLockingFailureException e) {
+                throw new RuntimeException("报名冲突，请稍后重试", e);
+            }
+
+            if (saved.getStatus() == 1) {
+                // 使用乐观锁更新活动当前人数
+                incrementParticipantsSafely(activity);
+            }
+
+            return saved;
+        } finally {
+            releaseLock(lockKey, lockValue);
         }
+    }
 
-        // 使用setter方法设置属性值
-        participant.setEnrollmentTime(LocalDateTime.now());
-        participant.setStatus(0); // 0-待审批
+    private void incrementParticipantsSafely(Activity activity) {
+        boolean updated = false;
+        int retry = 0;
+        while (!updated && retry < 3) {
+            try {
+                Long activityId = Objects.requireNonNull(activity.getId(), "活动ID不存在");
+                Activity managed = activityRepository.findById(activityId)
+                        .orElseThrow(() -> new RuntimeException("活动不存在"));
+                Integer current = Optional.ofNullable(managed.getCurrentParticipants()).orElse(0);
+                managed.setCurrentParticipants(current + 1);
+                activityRepository.save(managed);
+                updated = true;
+            } catch (OptimisticLockingFailureException ex) {
+                retry++;
+                if (retry >= 3) {
+                    throw new RuntimeException("系统繁忙，稍后再试", ex);
+                }
+                try {
+                    Thread.sleep(100L);
+                } catch (InterruptedException ignored) {
+                    Thread.currentThread().interrupt();
+                    throw new RuntimeException("线程中断", ignored);
+                }
+            }
+        }
+    }
 
-        // 保存参与记录
-        ActivityParticipant saved = participantRepository.save(participant);
+    private boolean acquireLock(String key, String value, Duration waitTimeout, Duration leaseTime) {
+        key = Objects.requireNonNull(key, "lock key must not be null");
+        value = Objects.requireNonNull(value, "lock value must not be null");
+        waitTimeout = Objects.requireNonNull(waitTimeout, "waitTimeout must not be null");
+        leaseTime = Objects.requireNonNull(leaseTime, "leaseTime must not be null");
+        long end = System.currentTimeMillis() + waitTimeout.toMillis();
+        while (System.currentTimeMillis() < end) {
+            Boolean success = stringRedisTemplate.opsForValue().setIfAbsent(
+                    key, value, leaseTime);
+            if (Boolean.TRUE.equals(success)) {
+                return true;
+            }
+            try {
+                Thread.sleep(50);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return false;
+            }
+        }
+        return false;
+    }
 
-        // 增加活动当前参与人数
-        activityRepository.incrementParticipantsCount(activityId);
+    private void releaseLock(String key, String value) {
+        key = Objects.requireNonNull(key, "lock key must not be null");
+        value = Objects.requireNonNull(value, "lock value must not be null");
+        try {
+            String currentValue = stringRedisTemplate.opsForValue().get(key);
+            if (value.equals(currentValue)) {
+                stringRedisTemplate.delete(key);
+            }
+        } catch (Exception ignored) {
+        }
+    }
 
-        return saved;
+    /**
+     * 发送活动报名审核通知
+     */
+    @SuppressWarnings("unchecked")
+    private void sendEnrollmentNotification(Activity activity, Long userId) {
+        userId = Objects.requireNonNull(userId, "用户ID不能为空");
+        try {
+            // 获取活动所属社团的社长（role=1）
+            Long clubId = activity.getClubId();
+            List<Long> notifyUserIds = new ArrayList<>();
+            
+            // 添加系统管理员（userId=1）
+            notifyUserIds.add(1L);
+            
+            // 获取社团社长
+            try {
+                String clubUrl = "http://localhost:8083/clubs/" + clubId;
+                Map<String, Object> clubInfo = restTemplate.getForObject(clubUrl, Map.class);
+                if (clubInfo != null) {
+                    // 获取社团成员列表，找到社长（role=1）
+                    String membersUrl = "http://localhost:8083/clubs/" + clubId + "/members";
+                    List<Map<String, Object>> members = restTemplate.getForObject(membersUrl, List.class);
+                    if (members != null) {
+                        for (Map<String, Object> member : members) {
+                            Object role = member.get("role");
+                            Object memberUserId = member.get("userId");
+                            // role=1表示社长
+                            if (role != null && (role.equals(1) || role.equals("1")) && memberUserId != null) {
+                                Long presidentId = Long.parseLong(memberUserId.toString());
+                                if (!notifyUserIds.contains(presidentId)) {
+                                    notifyUserIds.add(presidentId);
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                System.err.println("获取社团社长信息失败: " + e.getMessage());
+            }
+            
+            // 获取用户信息
+            String userName = "用户";
+            try {
+                String userUrl = "http://localhost:8082/users/" + userId;
+                Map<String, Object> userInfo = restTemplate.getForObject(userUrl, Map.class);
+                if (userInfo != null) {
+                    userName = (String) userInfo.getOrDefault("realName", 
+                            userInfo.getOrDefault("username", "用户"));
+                }
+            } catch (Exception e) {
+                System.err.println("获取用户信息失败: " + e.getMessage());
+            }
+            
+            // 发送通知给所有需要审核的用户
+            for (Long notifyUserId : notifyUserIds) {
+                try {
+                    Map<String, Object> notification = new HashMap<>();
+                    notification.put("userId", notifyUserId);
+                    notification.put("notificationType", 3); // 3-活动通知
+                    notification.put("title", "活动报名审核通知");
+                    notification.put("content", String.format("用户 %s 报名参加了活动《%s》，请及时审核。", 
+                            userName, activity.getTitle()));
+                    notification.put("relatedId", activity.getId());
+                    notification.put("relatedType", "activity_enrollment");
+                    notification.put("needPush", true);
+                    notification.put("status", 0); // 0-未读
+                    
+                    String notificationUrl = "http://localhost:8085/notifications";
+                    restTemplate.postForObject(notificationUrl, notification, Map.class);
+                } catch (Exception e) {
+                    System.err.println("发送通知失败，用户ID: " + notifyUserId + ", 错误: " + e.getMessage());
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("发送活动报名审核通知失败: " + e.getMessage());
+            // 通知发送失败不影响报名流程
+        }
     }
 
     @Override
@@ -104,7 +287,7 @@ public class ActivityParticipantServiceImpl implements ActivityParticipantServic
         ActivityParticipant participant = participantRepository.findByActivityIdAndUserId(activityId, userId)
                 .orElseThrow(() -> new RuntimeException("参与记录不存在"));
 
-        ActivityParticipantDTO dto = modelMapper.map(participant, ActivityParticipantDTO.class);
+        ActivityParticipantDTO dto = mapToDTO(participant);
         setParticipationStatusText(dto);
 
         return dto;
@@ -112,6 +295,7 @@ public class ActivityParticipantServiceImpl implements ActivityParticipantServic
 
     @Override
     public Page<ActivityParticipantDTO> getActivityParticipants(Long activityId, Integer status, Pageable pageable) {
+        pageable = Objects.requireNonNull(pageable, "pageable must not be null");
         Page<ActivityParticipant> participants;
         if (status != null) {
             participants = participantRepository.findAll(
@@ -129,7 +313,7 @@ public class ActivityParticipantServiceImpl implements ActivityParticipantServic
         }
 
         return participants.map(participant -> {
-            ActivityParticipantDTO dto = modelMapper.map(participant, ActivityParticipantDTO.class);
+            ActivityParticipantDTO dto = mapToDTO(participant);
             setParticipationStatusText(dto);
             return dto;
         });
@@ -137,13 +321,14 @@ public class ActivityParticipantServiceImpl implements ActivityParticipantServic
 
     @Override
     public Page<ActivityParticipantDTO> getUserParticipations(Long userId, Pageable pageable) {
+        pageable = Objects.requireNonNull(pageable, "pageable must not be null");
         Page<ActivityParticipant> participants = participantRepository.findAll(
                 (root, query, criteriaBuilder) -> criteriaBuilder.equal(root.get("userId"), userId),
                 pageable
         );
 
         return participants.map(participant -> {
-            ActivityParticipantDTO dto = modelMapper.map(participant, ActivityParticipantDTO.class);
+            ActivityParticipantDTO dto = mapToDTO(participant);
             setParticipationStatusText(dto);
             return dto;
         });
@@ -221,6 +406,31 @@ public class ActivityParticipantServiceImpl implements ActivityParticipantServic
         statistics.setCheckedInCount(checkedInCount);
 
         return statistics;
+    }
+
+    /**
+     * 手动映射实体为DTO，避免ModelMapper歧义和懒加载问题
+     */
+    private ActivityParticipantDTO mapToDTO(ActivityParticipant participant) {
+        ActivityParticipantDTO dto = new ActivityParticipantDTO();
+        dto.setId(participant.getId());
+        dto.setActivityId(participant.getActivityId());
+        dto.setUserId(participant.getUserId());
+        dto.setStatus(participant.getStatus());
+        dto.setEnrollmentTime(participant.getEnrollmentTime());
+        dto.setApprovalTime(participant.getApprovalTime());
+        dto.setApprovedBy(participant.getApprovedBy());
+        dto.setApprovalRemark(participant.getApprovalRemark());
+        dto.setCheckInTime(participant.getCheckInTime());
+        dto.setCheckOutTime(participant.getCheckOutTime());
+        dto.setEnrollmentInfo(participant.getEnrollmentInfo());
+        
+        // 如果关联的活动已加载，设置活动标题
+        if (participant.getActivity() != null) {
+            dto.setActivityTitle(participant.getActivity().getTitle());
+        }
+        
+        return dto;
     }
 
     private void setParticipationStatusText(ActivityParticipantDTO dto) {

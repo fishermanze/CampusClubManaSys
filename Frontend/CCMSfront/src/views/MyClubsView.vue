@@ -39,13 +39,18 @@
             <router-link to="/notifications" class="nav-link">
               <i class="fa fa-bell"></i>
               <span :class="{ hidden: sidebarCollapsed }">通知中心</span>
-              <span class="badge">3</span>
             </router-link>
           </li>
           <li class="nav-item">
             <router-link to="/profile" class="nav-link">
               <i class="fa fa-user"></i>
               <span :class="{ hidden: sidebarCollapsed }">个人资料</span>
+            </router-link>
+          </li>
+          <li class="nav-item">
+            <router-link to="/ai-assistant" class="nav-link">
+              <i class="fa fa-comments"></i>
+              <span :class="{ hidden: sidebarCollapsed }">AI助手</span>
             </router-link>
           </li>
           <li class="nav-item">
@@ -207,11 +212,23 @@
                   </button>
                   <button
                     class="btn"
-                    :class="isJoined(club.id) ? 'btn-disabled' : (isPending(club.id) ? 'btn-disabled' : 'btn-outline')"
+                    :class="
+                      isJoined(club.id)
+                        ? 'btn-disabled'
+                        : isPending(club.id)
+                        ? 'btn-disabled'
+                        : 'btn-outline'
+                    "
                     :disabled="isJoined(club.id) || isPending(club.id)"
                     @click="openApplyModal(club)"
                   >
-                    {{ isJoined(club.id) ? "已加入" : (isPending(club.id) ? "待审核" : "申请加入") }}
+                    {{
+                      isJoined(club.id)
+                        ? "已加入"
+                        : isPending(club.id)
+                        ? "待审核"
+                        : "申请加入"
+                    }}
                   </button>
                 </div>
               </div>
@@ -222,7 +239,9 @@
           <div v-else class="empty-state">
             <i class="fa fa-users text-gray-400"></i>
             <p>{{ searchQuery ? "未找到匹配的社团" : "您还没有加入任何社团" }}</p>
-            <button class="btn btn-primary" @click="showAllClubs = true">浏览推荐社团</button>
+            <button class="btn btn-primary" @click="showAllClubs = true">
+              浏览推荐社团
+            </button>
           </div>
 
           <!-- 分页控制 -->
@@ -364,64 +383,68 @@
       </div>
     </div>
 
-  <!-- 管理社团模态框 -->
-  <div v-if="showManageModal" class="modal-backdrop" @click.self="showManageModal = false">
-    <div class="modal manage-modal">
-      <div class="modal-header">
-        <h3>管理社团 - {{ managingClub?.name || (managingClub as any)?.id }}</h3>
-        <button class="close-btn" @click="showManageModal = false">×</button>
-      </div>
-      <div class="modal-body">
-        <div v-if="loadingMembers" class="loading-state">
-          <div class="loading-spinner"></div>
-          <p>加载中...</p>
+    <!-- 管理社团模态框 -->
+    <div
+      v-if="showManageModal"
+      class="modal-backdrop"
+      @click.self="showManageModal = false"
+    >
+      <div class="modal manage-modal">
+        <div class="modal-header">
+          <h3>管理社团 - {{ managingClub?.name || (managingClub as any)?.id }}</h3>
+          <button class="close-btn" @click="showManageModal = false">×</button>
         </div>
-        <div v-else>
-          <table class="members-table">
-            <thead>
-              <tr>
-                <th>用户ID</th>
-                <th>姓名</th>
-                <th>性别</th>
-                <th>专业</th>
-                <th>班级</th>
-                <th>状态</th>
-                <th class="actions-cell">操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="m in manageMembers" :key="m.id">
-                <td>{{ m.userId }}</td>
-                <td>{{ m.realName || "-" }}</td>
-                <td>{{ m.gender || "-" }}</td>
-                <td>{{ m.major || "-" }}</td>
-                <td>{{ m.className || "-" }}</td>
-                <td>
-                  <span v-if="m.status === 0">待审核</span>
-                  <span v-else-if="m.status === 1">已加入</span>
-                  <span v-else-if="m.status === 2">已退出</span>
-                  <span v-else-if="m.status === 3">已开除</span>
-                  <span v-else>-</span>
-                </td>
-                <td class="actions-cell">
-                  <button
-                    class="btn btn-outline"
-                    @click="expelApply(m)"
-                    :disabled="(currentUser?.id || 0) === m.userId"
-                  >
-                    申请开除
-                  </button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+        <div class="modal-body">
+          <div v-if="loadingMembers" class="loading-state">
+            <div class="loading-spinner"></div>
+            <p>加载中...</p>
+          </div>
+          <div v-else>
+            <table class="members-table">
+              <thead>
+                <tr>
+                  <th>用户ID</th>
+                  <th>姓名</th>
+                  <th>性别</th>
+                  <th>专业</th>
+                  <th>班级</th>
+                  <th>状态</th>
+                  <th class="actions-cell">操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="m in manageMembers" :key="m.id">
+                  <td>{{ m.userId }}</td>
+                  <td>{{ m.realName || "-" }}</td>
+                  <td>{{ m.gender || "-" }}</td>
+                  <td>{{ m.major || "-" }}</td>
+                  <td>{{ m.className || "-" }}</td>
+                  <td>
+                    <span v-if="m.status === 0">待审核</span>
+                    <span v-else-if="m.status === 1">已加入</span>
+                    <span v-else-if="m.status === 2">已退出</span>
+                    <span v-else-if="m.status === 3">已开除</span>
+                    <span v-else>-</span>
+                  </td>
+                  <td class="actions-cell">
+                    <button
+                      class="btn btn-outline"
+                      @click="expelApply(m)"
+                      :disabled="(currentUser?.id || 0) === m.userId"
+                    >
+                      申请开除
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-outline" @click="showManageModal = false">关闭</button>
+        <div class="modal-footer">
+          <button class="btn btn-outline" @click="showManageModal = false">关闭</button>
+        </div>
       </div>
     </div>
-  </div>
   </div>
 </template>
 
@@ -619,9 +642,13 @@ const canManageClub = (club: Club): boolean => {
   const uid = currentUser.value?.id || Number(localStorage.getItem("userId") || 0);
   const role = (currentUser.value as any)?.role || localStorage.getItem("role") || "";
   const isLeader = club.leaderId && Number(club.leaderId) === Number(uid);
-  const isClubAdmin = ["ADMIN", "admin", "CLUB_ADMIN", "club_admin", "club_manager"].includes(
-    String(role)
-  );
+  const isClubAdmin = [
+    "ADMIN",
+    "admin",
+    "CLUB_ADMIN",
+    "club_admin",
+    "club_manager",
+  ].includes(String(role));
   return Boolean(isLeader || isClubAdmin);
 };
 
@@ -638,7 +665,7 @@ const viewClubDetails = async (club: Club) => {
     ]);
     selectedClub.value = detailResp.data || club;
     const data = actsResp.data;
-    console.debug('Club activities raw response:', data);
+    console.debug("Club activities raw response:", data);
     const contentCandidates = [
       data?.data?.content,
       data?.data?.list,
@@ -647,7 +674,7 @@ const viewClubDetails = async (club: Club) => {
       data?.list,
       data?.items,
       data?.records,
-      data // 直接数组的情况
+      data, // 直接数组的情况
     ];
     let content: any = contentCandidates.find((c: any) => Array.isArray(c));
     // 若未解析到数组，尝试不带分页再请求一次
@@ -663,10 +690,10 @@ const viewClubDetails = async (club: Club) => {
           rd?.list,
           rd?.items,
           rd?.records,
-          rd
+          rd,
         ];
         content = retryCandidates.find((c: any) => Array.isArray(c));
-        console.debug('Retry activities raw response:', rd);
+        console.debug("Retry activities raw response:", rd);
       } catch (e) {
         // 忽略重试错误，保持空数组
       }
@@ -748,7 +775,10 @@ const submitApply = async () => {
     try {
       // 基础信息：真实姓名
       const basePayload: any = {};
-      if (applyForm.value.realName && applyForm.value.realName !== currentUser.value?.realName) {
+      if (
+        applyForm.value.realName &&
+        applyForm.value.realName !== currentUser.value?.realName
+      ) {
         basePayload.realName = applyForm.value.realName;
       }
       if (Object.keys(basePayload).length > 0) {
@@ -761,7 +791,7 @@ const submitApply = async () => {
       const profilePayload: any = {
         major: applyForm.value.major,
         className: applyForm.value.className,
-        gender: applyForm.value.gender
+        gender: applyForm.value.gender,
       };
       await axiosInstance.put("/user/me/profile", profilePayload);
       // 刷新本地缓存，后续预填不再缺失
@@ -792,7 +822,7 @@ const submitApply = async () => {
       gender: applyForm.value.gender,
       major: applyForm.value.major,
       className: applyForm.value.className,
-      reason: applyForm.value.reason
+      reason: applyForm.value.reason,
     });
     alert("申请已提交，等待社长审核");
     showApplyModal.value = false;
@@ -822,7 +852,9 @@ const openManageClub = async (club: Club) => {
     const resp = await clubApi.getClubMembers(club.id);
     console.log("获取成员列表响应:", resp);
     const list = resp.data || [];
-    manageMembers.value = Array.isArray(list) ? list : list.list || [];
+    const rawMembers = Array.isArray(list) ? list : list.list || [];
+    // 默认隐藏已开除成员（status=3），避免“开除后仍显示在列表”的困惑
+    manageMembers.value = rawMembers.filter((m: any) => m?.status !== 3);
     console.log("解析后的成员列表:", manageMembers.value);
   } catch (e: any) {
     console.error("加载成员列表失败:", e);
@@ -844,11 +876,13 @@ const expelApply = async (member: any) => {
   if (reason === null) return;
   try {
     const title = "社团成员开除申请";
-    const content = `社团：${(managingClub.value as any).name || (managingClub.value as any).id}\n待开除用户ID：${
-      member.userId
-    }\n姓名：${member.realName || ""}\n性别：${member.gender || ""}\n班级：${
-      member.className || ""
-    }\n专业：${member.major || ""}\n申请人：${uid}\n说明：${reason || "无"}`;
+    const content = `社团：${
+      (managingClub.value as any).name || (managingClub.value as any).id
+    }\n待开除用户ID：${member.userId}\n姓名：${member.realName || ""}\n性别：${
+      member.gender || ""
+    }\n班级：${member.className || ""}\n专业：${
+      member.major || ""
+    }\n申请人：${uid}\n说明：${reason || "无"}`;
     const notifications = [
       {
         userId: 1, // 系统管理员
@@ -862,9 +896,9 @@ const expelApply = async (member: any) => {
         userId: Number(member.userId),
         notificationType: 2,
         title: "您被申请从社团开除",
-        content: `社团：${(managingClub.value as any).name || (managingClub.value as any).id}\n说明：${
-          reason || "无"
-        }\n请等待管理员审核。`,
+        content: `社团：${
+          (managingClub.value as any).name || (managingClub.value as any).id
+        }\n说明：${reason || "无"}\n请等待管理员审核。`,
         relatedId: (managingClub.value as any).id,
         relatedType: "club_expel",
       },
@@ -872,9 +906,9 @@ const expelApply = async (member: any) => {
         userId: uid,
         notificationType: 2,
         title: "已提交开除申请",
-        content: `已为社团「${(managingClub.value as any).name || (managingClub.value as any).id}」提交对用户${
-          member.userId
-        }的开除申请。`,
+        content: `已为社团「${
+          (managingClub.value as any).name || (managingClub.value as any).id
+        }」提交对用户${member.userId}的开除申请。`,
         relatedId: (managingClub.value as any).id,
         relatedType: "club_expel",
       },

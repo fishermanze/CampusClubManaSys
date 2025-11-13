@@ -11,10 +11,13 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -26,10 +29,82 @@ public class ActivityServiceImpl implements ActivityService {
     @Autowired
     private ModelMapper modelMapper;
 
+    @Autowired
+    private RestTemplate restTemplate;
+
     @Override
     @Transactional
     public Activity createActivity(Activity activity) {
+        // 系统管理员（organizerId=1）创建的活动不需要审核，直接发布
+        Long organizerId = activity.getOrganizerId();
+        if (organizerId != null && organizerId == 1) {
+            // 系统管理员创建的活动直接设置为已发布状态
+            if (activity.getStatus() == null || activity.getStatus() == 0) {
+                activity.setStatus(1); // 1-已发布
+            }
+        } else {
+            // 非系统管理员创建的活动需要审核，设置为草稿状态
+            activity.setStatus(0); // 0-草稿
+            // 发送审核通知给系统管理员
+            sendActivityCreationNotification(activity);
+        }
+        
         return activityRepository.save(activity);
+    }
+
+    /**
+     * 发送活动创建审核通知
+     */
+    private void sendActivityCreationNotification(Activity activity) {
+        try {
+            // 获取创建者信息
+            String organizerName = "用户";
+            try {
+                String userUrl = "http://localhost:8082/users/" + activity.getOrganizerId();
+                Map<String, Object> userInfo = restTemplate.getForObject(userUrl, Map.class);
+                if (userInfo != null) {
+                    organizerName = (String) userInfo.getOrDefault("realName", 
+                            userInfo.getOrDefault("username", "用户"));
+                }
+            } catch (Exception e) {
+                System.err.println("获取用户信息失败: " + e.getMessage());
+            }
+            
+            // 获取社团信息
+            String clubName = "未知社团";
+            try {
+                String clubUrl = "http://localhost:8083/clubs/" + activity.getClubId();
+                Map<String, Object> clubInfo = restTemplate.getForObject(clubUrl, Map.class);
+                if (clubInfo != null) {
+                    clubName = (String) clubInfo.getOrDefault("name", "未知社团");
+                }
+            } catch (Exception e) {
+                System.err.println("获取社团信息失败: " + e.getMessage());
+            }
+            
+            // 发送通知给系统管理员（userId=1）
+            try {
+                Map<String, Object> notification = new HashMap<>();
+                notification.put("userId", 1L); // 系统管理员
+                notification.put("notificationType", 1); // 1-系统通知
+                notification.put("title", "活动创建审核通知");
+                notification.put("content", String.format("用户 %s 创建了新活动《%s》（所属社团：%s），请及时审核。", 
+                        organizerName, activity.getTitle(), clubName));
+                notification.put("relatedId", activity.getId());
+                notification.put("relatedType", "activity_creation");
+                notification.put("needPush", true);
+                notification.put("status", 0); // 0-未读
+                
+                String notificationUrl = "http://localhost:8085/notifications";
+                restTemplate.postForObject(notificationUrl, notification, Map.class);
+            } catch (Exception e) {
+                System.err.println("发送活动创建审核通知失败: " + e.getMessage());
+                // 通知发送失败不影响活动创建流程
+            }
+        } catch (Exception e) {
+            System.err.println("发送活动创建审核通知失败: " + e.getMessage());
+            // 通知发送失败不影响活动创建流程
+        }
     }
 
     @Override

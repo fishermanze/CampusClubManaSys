@@ -310,6 +310,71 @@ export const activityApi = {
   }
 }
 
+// 活动报名相关API
+export const activityParticipantApi = {
+  // 报名参加活动
+  enrollActivity: (participantData: {
+    activityId: number
+    userId: number
+    enrollmentInfo?: string
+  }) => {
+    return axiosInstance.post('/participations', participantData)
+  },
+  
+  // 取消报名
+  cancelEnrollment: (activityId: number, userId: number) => {
+    return axiosInstance.delete(`/participations/activity/${activityId}/user/${userId}`)
+  },
+
+  // 审批活动报名
+  approveParticipation: (
+    activityId: number,
+    userId: number,
+    params: {
+      status: number
+      remark?: string
+    }
+  ) => {
+    return axiosInstance.put(`/participations/activity/${activityId}/user/${userId}/approve`, null, {
+      params
+    })
+  },
+  
+  // 获取参与记录
+  getParticipation: (activityId: number, userId: number) => {
+    return axiosInstance.get(`/participations/activity/${activityId}/user/${userId}`)
+  },
+  
+  // 检查用户是否已参与活动
+  hasParticipated: (activityId: number, userId: number) => {
+    return axiosInstance.get(`/participations/activity/${activityId}/user/${userId}/exists`)
+  },
+  
+  // 获取用户在活动中的状态
+  getUserParticipationStatus: (activityId: number, userId: number) => {
+    return axiosInstance.get(`/participations/activity/${activityId}/user/${userId}/status`)
+  },
+  
+  // 获取活动参与者列表
+  getActivityParticipants: (activityId: number, params?: {
+    status?: number
+    page?: number
+    size?: number
+    sort?: string
+  }) => {
+    return axiosInstance.get(`/participations/activity/${activityId}`, { params })
+  },
+  
+  // 获取用户参与的活动列表
+  getUserParticipations: (userId: number, params?: {
+    page?: number
+    size?: number
+    sort?: string
+  }) => {
+    return axiosInstance.get(`/participations/user/${userId}`, { params })
+  }
+}
+
 // 评论相关API
 export const commentApi = {
   // 获取活动热门评论
@@ -329,10 +394,11 @@ export const commentApi = {
   // 创建评论
   createComment: (commentData: {
     activityId: number
+    userId?: number
     content: string
     parentId?: number
   }) => {
-    return axiosInstance.post('/comments', commentData)
+    return axiosInstance.post(`/comments`, commentData)
   },
   
   // 点赞评论

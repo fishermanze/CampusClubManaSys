@@ -39,13 +39,18 @@
             <router-link to="/notifications" class="nav-link">
               <i class="fa fa-bell"></i>
               <span :class="{ hidden: sidebarCollapsed }">通知中心</span>
-              <span class="badge">3</span>
             </router-link>
           </li>
           <li class="nav-item">
             <router-link to="/profile" class="nav-link">
               <i class="fa fa-user"></i>
               <span :class="{ hidden: sidebarCollapsed }">个人资料</span>
+            </router-link>
+          </li>
+          <li class="nav-item">
+            <router-link to="/ai-assistant" class="nav-link">
+              <i class="fa fa-comments"></i>
+              <span :class="{ hidden: sidebarCollapsed }">AI助手</span>
             </router-link>
           </li>
           <li class="nav-item">
@@ -486,25 +491,60 @@ const fetchNotifications = async () => {
     const uid = currentUser.value?.id || Number(localStorage.getItem("userId") || 0);
     if (!uid) throw new Error("未获取到用户ID");
     const response = await notificationApi.getNotifications(uid, {
-      page: currentPage.value,
+      page: currentPage.value - 1,
       size: pageSize.value,
     });
-    if (response.data?.data) {
-      const data = response.data.data;
-      notifications.value = (data.items || data.list || []).map((item: any) => ({
-        id: item.id,
-        userId: item.userId,
-        notificationType: item.notificationType || 1,
-        title: item.title || "通知",
-        content: item.content || "",
-        status: item.status || 0,
-        relatedId: item.relatedId,
-        relatedType: item.relatedType,
-        needPush: item.needPush !== false,
-        createdAt: item.createdAt || item.created_at,
-        updatedAt: item.updatedAt || item.updated_at,
-      }));
-      totalNotifications.value = data.total || notifications.value.length;
+
+    let rawList: any[] = [];
+    const respData = response.data;
+
+    if (Array.isArray(respData)) {
+      rawList = respData;
+    } else if (respData?.data) {
+      if (Array.isArray(respData.data)) {
+        rawList = respData.data;
+      } else {
+        rawList =
+          respData.data.items ||
+          respData.data.list ||
+          respData.data.content ||
+          [];
+      }
+      totalNotifications.value =
+        respData.data.total ||
+        respData.data.totalElements ||
+        rawList.length ||
+        0;
+    } else if (respData?.items || respData?.list || respData?.content) {
+      rawList =
+        respData.items || respData.list || respData.content || [];
+      totalNotifications.value =
+        respData.total ||
+        respData.totalElements ||
+        rawList.length ||
+        0;
+    } else {
+      rawList = [];
+      totalNotifications.value = 0;
+    }
+
+    notifications.value = rawList.map((item: any) => ({
+      id: item.id,
+      userId: item.userId,
+      notificationType: item.notificationType || item.type || 1,
+      title: item.title || "通知",
+      content: item.content || "",
+      status:
+        item.status !== undefined && item.status !== null ? item.status : 0,
+      relatedId: item.relatedId,
+      relatedType: item.relatedType,
+      needPush: item.needPush !== false,
+      createdAt: item.createdAt || item.created_at,
+      updatedAt: item.updatedAt || item.updated_at,
+    }));
+
+    if (!respData?.data) {
+      totalNotifications.value = rawList.length;
     }
   } catch (err: any) {
     error.value = err.response?.data?.message || "加载通知列表失败";

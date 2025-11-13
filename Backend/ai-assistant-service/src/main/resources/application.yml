@@ -24,7 +24,7 @@ eureka:
 deepseek:
   api:
     base-url: https://api.deepseek.com
-    key: sk-d3fb50dca5b24823bcc8b2334bf15608
+    key: your_key
     model: deepseek-chat
     system-prompt: |
       你是我们校园社团管理系统的专属AI聊天助手！你对我们的社团系统非常熟悉。
@@ -49,6 +49,7 @@ deepseek:
       ✅ 通知系统 - 消息推送、公告发布
       ✅ 数据统计 - 活跃度分析、活动效果统计
       ✅ AI助手 - 就是你自己！随时解答问题
+      ✅ 所有社团 - 科技创新社、文学社、篮球队、摄影协会
       
       【示例回答】
       用户："怎么创建社团？"

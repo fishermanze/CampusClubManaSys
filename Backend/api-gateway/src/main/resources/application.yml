@@ -122,6 +122,21 @@ spring:
             - AuthenticationFilter
 
         # 活动评论路由 - 支持 /api/comments 和 /comments
+        # 精确匹配列表（无尾随斜杠）
+        - id: activity-comments-api-root
+          uri: http://localhost:8084
+          predicates:
+            - Path=/api/comments
+          filters:
+            - RewritePath=/api/comments, /comments
+            - AuthenticationFilter
+        - id: activity-comments-root
+          uri: http://localhost:8084
+          predicates:
+            - Path=/comments
+          filters:
+            - RewritePath=/comments, /comments
+            - AuthenticationFilter
         - id: activity-comments-api
           uri: http://localhost:8084
           predicates:
@@ -135,6 +150,37 @@ spring:
             - Path=/comments/**
           filters:
             - RewritePath=/comments/?(?<segment>.*), /comments/$\{segment}
+            - AuthenticationFilter
+        
+        # 活动报名路由 - 支持 /api/participations 和 /participations
+        # 精确匹配列表（无尾随斜杠）
+        - id: activity-participations-api-root
+          uri: http://localhost:8084
+          predicates:
+            - Path=/api/participations
+          filters:
+            - RewritePath=/api/participations, /participations
+            - AuthenticationFilter
+        - id: activity-participations-root
+          uri: http://localhost:8084
+          predicates:
+            - Path=/participations
+          filters:
+            - RewritePath=/participations, /participations
+            - AuthenticationFilter
+        - id: activity-participations-api
+          uri: http://localhost:8084
+          predicates:
+            - Path=/api/participations/**
+          filters:
+            - RewritePath=/api/participations/?(?<segment>.*), /participations/$\{segment}
+            - AuthenticationFilter
+        - id: activity-participations
+          uri: http://localhost:8084
+          predicates:
+            - Path=/participations/**
+          filters:
+            - RewritePath=/participations/?(?<segment>.*), /participations/$\{segment}
             - AuthenticationFilter
         
         # 消息服务路由 - 支持 /api/messages 和 /messages

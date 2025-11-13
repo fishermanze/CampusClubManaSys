@@ -206,26 +206,50 @@ public class ActivityCommentServiceImpl implements ActivityCommentService {
         try {
             // 直接调用 user-service，避免通过网关的鉴权影响
             String url = "http://localhost:8082/users/" + dto.getUserId();
+            System.out.println("正在获取用户信息: " + url);
+            
             UserView userView = restTemplate.getForObject(url, UserView.class);
             if (userView != null) {
+                System.out.println("获取到用户信息: ID=" + userView.getId() + 
+                        ", username=" + userView.getUsername() + 
+                        ", realName=" + userView.getRealName());
+                
+                // 优先使用 realName，如果没有则使用 username
                 String name = Optional.ofNullable(userView.getRealName())
-                        .orElse(Optional.ofNullable(userView.getName()).orElse(null));
+                        .filter(n -> !n.isEmpty())
+                        .orElse(Optional.ofNullable(userView.getUsername())
+                                .filter(n -> !n.isEmpty())
+                                .orElse("匿名用户"));
                 dto.setUserName(name);
                 dto.setUserAvatar(userView.getAvatar());
+                
+                System.out.println("设置用户名: " + name);
+            } else {
+                System.err.println("获取用户信息失败: 用户ID " + dto.getUserId() + " 返回null");
             }
-        } catch (Exception ignored) {
-            // 静默失败，保持匿名显示
+        } catch (org.springframework.web.client.HttpClientErrorException e) {
+            // HTTP 错误（如 404, 401 等）
+            System.err.println("获取用户信息HTTP错误: 用户ID " + dto.getUserId() + 
+                    ", 状态码: " + e.getStatusCode() + 
+                    ", 响应: " + e.getResponseBodyAsString());
+        } catch (Exception e) {
+            // 其他错误
+            System.err.println("获取用户信息失败: 用户ID " + dto.getUserId() + 
+                    ", 错误类型: " + e.getClass().getName() + 
+                    ", 错误信息: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
     /**
-     * 最小用户视图
+     * 最小用户视图 - 匹配 UserDetailDTO 的字段
+     * 使用 @JsonIgnoreProperties 忽略未知字段，确保能正确反序列化
      */
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
     public static class UserView {
         private Long id;
         private String username;
         private String realName;
-        private String name;
         private String avatar;
 
         public Long getId() { return id; }
@@ -234,8 +258,6 @@ public class ActivityCommentServiceImpl implements ActivityCommentService {
         public void setUsername(String username) { this.username = username; }
         public String getRealName() { return realName; }
         public void setRealName(String realName) { this.realName = realName; }
-        public String getName() { return name; }
-        public void setName(String name) { this.name = name; }
         public String getAvatar() { return avatar; }
         public void setAvatar(String avatar) { this.avatar = avatar; }
     }

@@ -30,4 +30,8 @@ public class ClubMember {
     private String className;
     @Column(length = 1000)
     private String reason;
+
+    @Version
+    @Column(name = "version", nullable = false)
+    private Long version = 0L;
 }

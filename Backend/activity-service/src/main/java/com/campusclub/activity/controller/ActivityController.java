@@ -238,13 +238,41 @@ public class ActivityController {
         return null;
     }
 
-    private Sort.Order getSortOrder(String sort) {
-        String[] parts = sort.split(",");
-        String property = parts[0];
-        String direction = parts.length > 1 ? parts[1] : "desc";
-        return direction.equalsIgnoreCase("asc") 
-                ? Sort.Order.asc(property) 
-                : Sort.Order.desc(property);
+    private Sort.Order[] getSortOrder(String sort) {
+        // 支持多字段排序，格式：field1,direction1;field2,direction2
+        if (sort == null || sort.isEmpty()) {
+            return new Sort.Order[]{
+                Sort.Order.desc("createdAt"),
+                Sort.Order.asc("id")
+            };
+        }
+        
+        // 如果包含分号，说明是多字段排序
+        if (sort.contains(";")) {
+            String[] sortPairs = sort.split(";");
+            Sort.Order[] orders = new Sort.Order[sortPairs.length];
+            for (int i = 0; i < sortPairs.length; i++) {
+                String[] parts = sortPairs[i].split(",");
+                String property = parts[0].trim();
+                String direction = parts.length > 1 ? parts[1].trim() : "desc";
+                orders[i] = direction.equalsIgnoreCase("asc") 
+                        ? Sort.Order.asc(property) 
+                        : Sort.Order.desc(property);
+            }
+            return orders;
+        } else {
+            // 单字段排序
+            String[] parts = sort.split(",");
+            String property = parts[0].trim();
+            String direction = parts.length > 1 ? parts[1].trim() : "desc";
+            // 单字段排序时，默认添加id作为第二排序字段
+            return new Sort.Order[]{
+                direction.equalsIgnoreCase("asc") 
+                        ? Sort.Order.asc(property) 
+                        : Sort.Order.desc(property),
+                Sort.Order.asc("id")
+            };
+        }
     }
 
     /**

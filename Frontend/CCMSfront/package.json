@@ -12,6 +12,7 @@
     "@fortawesome/fontawesome-free": "^7.1.0",
     "axios": "^1.12.2",
     "fontawesome": "^5.6.3",
+    "terser": "^5.44.1",
     "vue": "^3.5.22",
     "vue-router": "^4.6.3"
   },
