@@ -11,6 +11,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 
 @RestController
@@ -24,7 +25,16 @@ public class ActivityCommentController {
      * 创建评论
      */
     @PostMapping
-    public ResponseEntity<ActivityComment> createComment(@RequestBody ActivityComment comment) {
+    public ResponseEntity<ActivityComment> createComment(@RequestBody ActivityComment comment, HttpServletRequest request) {
+        // 如果请求头中有用户ID，优先使用请求头中的（更安全）
+        Long currentUserId = getCurrentUserId(request);
+        if (currentUserId != null) {
+            comment.setUserId(currentUserId);
+        }
+        // 如果请求头中没有用户ID，使用请求体中的userId（兼容旧版本）
+        if (comment.getUserId() == null) {
+            throw new RuntimeException("用户ID不能为空");
+        }
         return ResponseEntity.ok(commentService.createComment(comment));
     }
 
@@ -50,8 +60,8 @@ public class ActivityCommentController {
      * 点赞评论
      */
     @PostMapping("/{id}/like")
-    public ResponseEntity<Void> likeComment(@PathVariable Long id) {
-        Long currentUserId = getCurrentUserId();
+    public ResponseEntity<Void> likeComment(@PathVariable Long id, HttpServletRequest request) {
+        Long currentUserId = getCurrentUserId(request);
         commentService.likeComment(id, currentUserId);
         return ResponseEntity.ok().build();
     }
@@ -60,8 +70,8 @@ public class ActivityCommentController {
      * 取消点赞评论
      */
     @DeleteMapping("/{id}/like")
-    public ResponseEntity<Void> unlikeComment(@PathVariable Long id) {
-        Long currentUserId = getCurrentUserId();
+    public ResponseEntity<Void> unlikeComment(@PathVariable Long id, HttpServletRequest request) {
+        Long currentUserId = getCurrentUserId(request);
         commentService.unlikeComment(id, currentUserId);
         return ResponseEntity.ok().build();
     }
@@ -70,8 +80,8 @@ public class ActivityCommentController {
      * 获取评论详情
      */
     @GetMapping("/{id}")
-    public ResponseEntity<ActivityCommentDTO> getCommentById(@PathVariable Long id) {
-        Long currentUserId = getCurrentUserId();
+    public ResponseEntity<ActivityCommentDTO> getCommentById(@PathVariable Long id, HttpServletRequest request) {
+        Long currentUserId = getCurrentUserId(request);
         return ResponseEntity.ok(commentService.getCommentById(id, currentUserId));
     }
 
@@ -83,10 +93,11 @@ public class ActivityCommentController {
             @PathVariable Long activityId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "createdAt,desc") String sort) {
+            @RequestParam(defaultValue = "createdAt,desc") String sort,
+            HttpServletRequest request) {
         
         Pageable pageable = PageRequest.of(page, size, Sort.by(getSortOrder(sort)));
-        Long currentUserId = getCurrentUserId();
+        Long currentUserId = getCurrentUserId(request);
         return ResponseEntity.ok(commentService.getActivityComments(activityId, pageable, currentUserId));
     }
 
@@ -94,8 +105,8 @@ public class ActivityCommentController {
      * 获取评论的回复
      */
     @GetMapping("/{id}/replies")
-    public ResponseEntity<List<ActivityCommentDTO>> getCommentReplies(@PathVariable Long id) {
-        Long currentUserId = getCurrentUserId();
+    public ResponseEntity<List<ActivityCommentDTO>> getCommentReplies(@PathVariable Long id, HttpServletRequest request) {
+        Long currentUserId = getCurrentUserId(request);
         return ResponseEntity.ok(commentService.getCommentReplies(id, currentUserId));
     }
 
@@ -170,23 +181,46 @@ public class ActivityCommentController {
     @GetMapping("/activity/{activityId}/hot")
     public ResponseEntity<List<ActivityCommentDTO>> getHotComments(
             @PathVariable Long activityId,
-            @RequestParam(defaultValue = "5") int limit) {
+            @RequestParam(defaultValue = "5") int limit,
+            HttpServletRequest request) {
         
-        Long currentUserId = getCurrentUserId();
+        Long currentUserId = getCurrentUserId(request);
         return ResponseEntity.ok(commentService.getHotComments(activityId, limit, currentUserId));
     }
 
-    // 辅助方法
-    private Long getCurrentUserId() {
-        // 简化实现，实际应从Token或SecurityContext中获取
+    // 辅助方法 - 从请求头中获取用户ID
+    private Long getCurrentUserId(HttpServletRequest request) {
+        if (request != null) {
+            // 尝试从请求头中获取用户ID（API Gateway可能传递的header名称）
+            String userIdHeader = request.getHeader("X-User-Id");
+            if (userIdHeader == null || userIdHeader.isEmpty()) {
+                userIdHeader = request.getHeader("UserId");
+            }
+            if (userIdHeader == null || userIdHeader.isEmpty()) {
+                userIdHeader = request.getHeader("user-id");
+            }
+            
+            if (userIdHeader != null && !userIdHeader.isEmpty()) {
+                try {
+                    return Long.parseLong(userIdHeader);
+                } catch (NumberFormatException e) {
+                    return null;
+                }
+            }
+        }
         return null;
     }
 
     private Sort.Order getSortOrder(String sort) {
+        if (sort == null || sort.isEmpty()) {
+            return Sort.Order.desc("createdAt");
+        }
         String[] parts = sort.split(",");
-        String property = parts[0];
-        String direction = parts.length > 1 ? parts[1] : "desc";
-        return direction.equalsIgnoreCase("asc") 
+        String property = (parts.length > 0 && parts[0] != null && !parts[0].isEmpty()) 
+                ? parts[0] : "createdAt";
+        String direction = (parts.length > 1 && parts[1] != null && !parts[1].isEmpty()) 
+                ? parts[1] : "desc";
+        return "asc".equalsIgnoreCase(direction) 
                 ? Sort.Order.asc(property) 
                 : Sort.Order.desc(property);
     }

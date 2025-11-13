@@ -9,11 +9,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
+import java.time.Duration;
 import java.util.*;
+import java.util.UUID;
+import java.util.Objects;
 
 @Service
 public class ClubServiceImpl implements ClubService {
@@ -26,10 +31,17 @@ public class ClubServiceImpl implements ClubService {
     @Autowired
     private ClubMemberRepository clubMemberRepository;
 
+    @Autowired
+    private StringRedisTemplate stringRedisTemplate;
+
     private final RestTemplate restTemplate = new RestTemplate();
 
     @Value("${gateway.base-url:http://localhost:8080}")
     private String gatewayBaseUrl;
+
+    private static final String MEMBER_LOCK_PREFIX = "lock:club:member:";
+    private static final Duration LOCK_WAIT = Duration.ofSeconds(2);
+    private static final Duration LOCK_LEASE = Duration.ofSeconds(8);
 
     @Override
     @Transactional
@@ -51,6 +63,7 @@ public class ClubServiceImpl implements ClubService {
 
     @Override
     public Club getClubById(Long id) {
+        id = Objects.requireNonNull(id, "id must not be null");
         return clubRepository.findById(id).orElse(null);
     }
 
@@ -67,6 +80,7 @@ public class ClubServiceImpl implements ClubService {
     @Override
     @Transactional
     public void updateClubStatus(Long id, Integer status) {
+        id = Objects.requireNonNull(id, "id must not be null");
         Club club = clubRepository.findById(id).orElseThrow();
         club.setStatus(status);
         clubRepository.save(club);
@@ -74,18 +88,23 @@ public class ClubServiceImpl implements ClubService {
 
     @Override
     public List<Club> getClubsByCategory(String category) {
+        category = Objects.requireNonNull(category, "category must not be null");
         return clubRepository.findByCategory(category);
     }
 
     @Override
     public List<Club> getClubsByLeaderId(Long leaderId) {
+        leaderId = Objects.requireNonNull(leaderId, "leaderId must not be null");
         // 1) 直接匹配 Club.leaderId
         List<Club> direct = clubRepository.findByLeaderId(leaderId);
         // 2) 通过 ClubMember 中 role=1(负责人) 反查
         List<ClubMember> managed = clubMemberRepository.findByUserIdAndRoleIn(leaderId, Arrays.asList(1, 2));
         Set<Long> clubIds = new HashSet<>();
         for (Club c : direct) {
-            clubIds.add(c.getId());
+            Long clubId = c.getId();
+            if (clubId != null) {
+                clubIds.add(clubId);
+            }
         }
         for (ClubMember cm : managed) {
             if (cm.getClubId() != null) {
@@ -97,7 +116,8 @@ public class ClubServiceImpl implements ClubService {
         }
         List<Club> merged = new ArrayList<>();
         for (Long cid : clubIds) {
-            clubRepository.findById(cid).ifPresent(merged::add);
+            Long safeCid = Objects.requireNonNull(cid, "clubId must not be null");
+            clubRepository.findById(safeCid).ifPresent(merged::add);
         }
         return merged;
     }
@@ -105,6 +125,8 @@ public class ClubServiceImpl implements ClubService {
     @Override
     @Transactional
     public ClubMember joinClub(Long clubId, Long userId) {
+        clubId = Objects.requireNonNull(clubId, "clubId must not be null");
+        userId = Objects.requireNonNull(userId, "userId must not be null");
         ClubMember member = new ClubMember();
         member.setClubId(clubId);
         member.setUserId(userId);
@@ -139,6 +161,8 @@ public class ClubServiceImpl implements ClubService {
     @Override
     @Transactional
     public void leaveClub(Long clubId, Long userId) {
+        clubId = Objects.requireNonNull(clubId, "clubId must not be null");
+        userId = Objects.requireNonNull(userId, "userId must not be null");
         ClubMember member = clubMemberRepository.findByClubIdAndUserId(clubId, userId)
                 .orElseThrow();
         member.setStatus(2); // 已退出
@@ -149,6 +173,8 @@ public class ClubServiceImpl implements ClubService {
     @Override
     @Transactional
     public void updateMemberStatus(Long clubId, Long userId, Integer status) {
+        clubId = Objects.requireNonNull(clubId, "clubId must not be null");
+        userId = Objects.requireNonNull(userId, "userId must not be null");
         ClubMember member = clubMemberRepository.findByClubIdAndUserId(clubId, userId)
                 .orElseThrow();
         member.setStatus(status);
@@ -159,6 +185,8 @@ public class ClubServiceImpl implements ClubService {
     @Override
     @Transactional
     public void updateMemberLevel(Long clubId, Long userId, Integer level) {
+        clubId = Objects.requireNonNull(clubId, "clubId must not be null");
+        userId = Objects.requireNonNull(userId, "userId must not be null");
         ClubMember member = clubMemberRepository.findByClubIdAndUserId(clubId, userId)
                 .orElseThrow();
         member.setLevel(level);
@@ -169,6 +197,7 @@ public class ClubServiceImpl implements ClubService {
     @Override
     @SuppressWarnings("unchecked")
     public List<ClubMember> getClubMembers(Long clubId) {
+        clubId = Objects.requireNonNull(clubId, "clubId must not be null");
         List<ClubMember> members = clubMemberRepository.findByClubId(clubId);
         
         // 对于信息不完整的成员，从 user-service 获取用户详细信息并补充
@@ -225,17 +254,30 @@ public class ClubServiceImpl implements ClubService {
 
     @Override
     public List<ClubMember> getUserClubs(Long userId) {
+        userId = Objects.requireNonNull(userId, "userId must not be null");
         return clubMemberRepository.findByUserId(userId);
     }
 
     @Override
     @Transactional
     public void expelMember(Long clubId, Long userId) {
-        ClubMember member = clubMemberRepository.findByClubIdAndUserId(clubId, userId)
-                .orElseThrow();
-        member.setStatus(3); // 已开除
-        member.setUpdateTime(new Date());
-        clubMemberRepository.save(member);
+        clubId = Objects.requireNonNull(clubId, "clubId must not be null");
+        userId = Objects.requireNonNull(userId, "userId must not be null");
+        String lockKey = buildMemberLockKey(clubId, userId);
+        String lockValue = UUID.randomUUID().toString();
+        if (!acquireLock(lockKey, lockValue, LOCK_WAIT, LOCK_LEASE)) {
+            throw new RuntimeException("系统繁忙，请稍后再试");
+        }
+        try {
+            ClubMember target = clubMemberRepository.findByClubIdAndUserId(clubId, userId)
+                    .orElseThrow();
+            saveMemberWithRetry(target.getId(), member -> {
+                member.setStatus(3);
+                member.setUpdateTime(new Date());
+            });
+        } finally {
+            releaseLock(lockKey, lockValue);
+        }
     }
 
     @Override
@@ -276,11 +318,23 @@ public class ClubServiceImpl implements ClubService {
     @Override
     @Transactional
     public void approveMember(Long clubId, Long userId, boolean approved, Long approverId) {
-        ClubMember member = clubMemberRepository.findByClubIdAndUserId(clubId, userId)
-                .orElseThrow();
-        member.setStatus(approved ? 1 : 2); // 1=已加入, 2=已退出(视作拒绝)
-        member.setUpdateTime(new Date());
-        clubMemberRepository.save(member);
+        clubId = Objects.requireNonNull(clubId, "clubId must not be null");
+        userId = Objects.requireNonNull(userId, "userId must not be null");
+        String lockKey = buildMemberLockKey(clubId, userId);
+        String lockValue = UUID.randomUUID().toString();
+        if (!acquireLock(lockKey, lockValue, LOCK_WAIT, LOCK_LEASE)) {
+            throw new RuntimeException("系统繁忙，请稍后再试");
+        }
+        try {
+            ClubMember target = clubMemberRepository.findByClubIdAndUserId(clubId, userId)
+                    .orElseThrow();
+            saveMemberWithRetry(target.getId(), member -> {
+                member.setStatus(approved ? 1 : 2);
+                member.setUpdateTime(new Date());
+            });
+        } finally {
+            releaseLock(lockKey, lockValue);
+        }
         // 通知申请人结果
         try {
             Map<String, Object> payload = new HashMap<>();
@@ -296,4 +350,69 @@ public class ClubServiceImpl implements ClubService {
     }
 
     // 旧的按角色群发通知逻辑已移除，按需求仅通知社团负责人
+
+    private String buildMemberLockKey(Long clubId, Long userId) {
+        return MEMBER_LOCK_PREFIX + clubId + ":" + userId;
+    }
+
+    private boolean acquireLock(String key, String value, Duration waitTimeout, Duration leaseTime) {
+        key = Objects.requireNonNull(key, "lock key must not be null");
+        value = Objects.requireNonNull(value, "lock value must not be null");
+        waitTimeout = Objects.requireNonNull(waitTimeout, "waitTimeout must not be null");
+        leaseTime = Objects.requireNonNull(leaseTime, "leaseTime must not be null");
+        long end = System.currentTimeMillis() + waitTimeout.toMillis();
+        while (System.currentTimeMillis() < end) {
+            Boolean success = stringRedisTemplate.opsForValue()
+                    .setIfAbsent(key, value, leaseTime);
+            if (Boolean.TRUE.equals(success)) {
+                return true;
+            }
+            try {
+                Thread.sleep(50L);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return false;
+            }
+        }
+        return false;
+    }
+
+    private void releaseLock(String key, String value) {
+        key = Objects.requireNonNull(key, "lock key must not be null");
+        value = Objects.requireNonNull(value, "lock value must not be null");
+        try {
+            String currentValue = stringRedisTemplate.opsForValue().get(key);
+            if (value.equals(currentValue)) {
+                stringRedisTemplate.delete(key);
+            }
+        } catch (Exception ignored) {
+        }
+    }
+
+    private void saveMemberWithRetry(Long memberId, java.util.function.Consumer<ClubMember> updater) {
+        memberId = Objects.requireNonNull(memberId, "memberId must not be null");
+        Objects.requireNonNull(updater, "updater must not be null");
+        int retry = 0;
+        while (retry < 3) {
+            try {
+                ClubMember managed = clubMemberRepository.findById(memberId)
+                        .orElseThrow();
+                Objects.requireNonNull(managed, "成员信息不存在");
+                updater.accept(managed);
+                clubMemberRepository.save(managed);
+                return;
+            } catch (OptimisticLockingFailureException ex) {
+                retry++;
+                if (retry >= 3) {
+                    throw new RuntimeException("成员信息已被更新，请刷新后重试", ex);
+                }
+                try {
+                    Thread.sleep(80L);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new RuntimeException("线程中断", e);
+                }
+            }
+        }
+    }
 }

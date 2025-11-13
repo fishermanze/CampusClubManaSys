@@ -6,6 +6,7 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import jakarta.persistence.*;
+import jakarta.persistence.Version;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -82,6 +83,10 @@ public class Activity {
     // 是否需要审核
     @Column(name = "need_approval", nullable = false)
     private Boolean needApproval = false;
+
+    @Version
+    @Column(name = "version", nullable = false)
+    private Long version = 0L;
 
     // 创建时间
     @CreatedDate

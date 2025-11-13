@@ -39,7 +39,6 @@
             <router-link to="/notifications" class="nav-link">
               <i class="fa fa-bell"></i>
               <span :class="{ hidden: sidebarCollapsed }">通知中心</span>
-              <span class="badge">3</span>
             </router-link>
           </li>
 
@@ -47,6 +46,12 @@
             <router-link to="/profile" class="nav-link">
               <i class="fa fa-user"></i>
               <span :class="{ hidden: sidebarCollapsed }">个人资料</span>
+            </router-link>
+          </li>
+          <li class="nav-item">
+            <router-link to="/ai-assistant" class="nav-link">
+              <i class="fa fa-comments"></i>
+              <span :class="{ hidden: sidebarCollapsed }">AI助手</span>
             </router-link>
           </li>
           <li class="nav-item">
@@ -185,7 +190,10 @@
                 @click="handleCreateClick"
                 :disabled="loading || !canManageActivities"
               >
-                <i class="fa fa-plus" :class="{ 'icon-disabled': !canManageActivities }"></i>
+                <i
+                  class="fa fa-plus"
+                  :class="{ 'icon-disabled': !canManageActivities }"
+                ></i>
                 创建活动
               </button>
             </div>
@@ -293,7 +301,10 @@
                 @click="handleCreateClick"
                 :disabled="!canManageActivities"
               >
-                <i class="fa fa-plus" :class="{ 'icon-disabled': !canManageActivities }"></i>
+                <i
+                  class="fa fa-plus"
+                  :class="{ 'icon-disabled': !canManageActivities }"
+                ></i>
                 创建活动
               </button>
             </div>
@@ -382,6 +393,52 @@
             <div class="detail-row">
               <label>需要审批：</label>
               <span>{{ viewingActivity.needApproval ? "是" : "否" }}</span>
+            </div>
+          </div>
+
+          <!-- 活动报名区域 -->
+          <div class="activity-enrollment-section">
+            <div v-if="loadingParticipation" class="loading-enrollment">
+              加载报名状态中...
+            </div>
+            <div v-else-if="participationStatus === null" class="enrollment-actions">
+              <button
+                class="btn btn-primary"
+                @click="handleEnrollActivity"
+                :disabled="enrollingActivity || !canEnroll"
+              >
+                <i class="fa fa-sign-in"></i>
+                {{ enrollingActivity ? "报名中..." : "报名参加" }}
+              </button>
+              <p v-if="!canEnroll" class="enrollment-hint">
+                {{ getEnrollmentHint() }}
+              </p>
+            </div>
+            <div v-else class="enrollment-status">
+              <div class="status-info">
+                <span
+                  :class="[
+                    'status-badge',
+                    getParticipationStatusClass(participationStatus),
+                  ]"
+                >
+                  {{ getParticipationStatusText(participationStatus) }}
+                </span>
+                <button
+                  v-if="participationStatus === 0 || participationStatus === 1"
+                  class="btn btn-sm btn-outline text-warning"
+                  @click="handleCancelEnrollment"
+                  :disabled="enrollingActivity"
+                >
+                  <i class="fa fa-times"></i> 取消报名
+                </button>
+              </div>
+              <div v-if="participationInfo?.enrollmentTime" class="enrollment-time">
+                报名时间：{{ formatDate(participationInfo.enrollmentTime) }}
+              </div>
+              <div v-if="participationInfo?.approvalRemark" class="approval-remark">
+                审核备注：{{ participationInfo.approvalRemark }}
+              </div>
             </div>
           </div>
 
@@ -619,8 +676,14 @@ import {
   notificationApi,
   clubApi,
   commentApi,
+  activityParticipantApi,
 } from "../api/apiService";
-import type { User, Activity, ActivityComment } from "../types/index";
+import type {
+  User,
+  Activity,
+  ActivityComment,
+  ActivityParticipant,
+} from "../types/index";
 
 const router = useRouter();
 
@@ -684,6 +747,12 @@ const loadingComments = ref(false);
 const newCommentContent = ref("");
 const submittingComment = ref(false);
 const replyingToComment = ref<ActivityComment | null>(null);
+
+// 活动报名相关
+const participationStatus = ref<number | null>(null); // null-未报名, 0-待审核, 1-已通过, 2-已拒绝, 3-已参加, 4-未参加
+const loadingParticipation = ref(false);
+const enrollingActivity = ref(false);
+const participationInfo = ref<ActivityParticipant | null>(null);
 
 // 活动表单
 const activityForm = ref({
@@ -824,7 +893,7 @@ const fetchActivities = async () => {
     const response = await activityApi.getActivities({
       page: currentPage.value - 1, // Spring Data分页从0开始
       size: pageSize.value,
-      sort: "id,asc",
+      sort: "startTime,desc;id,asc", // 时间越靠后（越新）越先显示，相同时间id越小越先显示
     });
     console.log("活动列表响应:", response);
 
@@ -857,7 +926,7 @@ const fetchActivities = async () => {
             updatedAt: item.updatedAt,
             // 扩展属性（用于UI显示和操作）
             clubName: item.clubName || item.club?.name || "",
-            canEdit: currentUser.value?.id === item.organizerId,
+            canEdit: currentUser.value?.id === item.organizerId || currentUser.value?.id === 1, // 活动创建者或系统管理员可以编辑
             canCancel: item.status === 0 || item.status === 1 || item.status === 2,
           } as Activity & { clubName?: string; canEdit?: boolean; canCancel?: boolean })
       );
@@ -882,12 +951,12 @@ const fetchActivities = async () => {
         });
       }
 
-      // 按活动ID升序排序展示
-      activities.value = activities.value.sort((a, b) => {
-        const ida = (a as any).id ?? 0;
-        const idb = (b as any).id ?? 0;
-        return ida - idb;
-      });
+      // // 按活动ID升序排序展示
+      // activities.value = activities.value.sort((a, b) => {
+      //   const ida = (a as any).id ?? 0;
+      //   const idb = (b as any).id ?? 0;
+      //   return ida - idb;
+      // });
 
       // 设置分页信息
       totalPages.value = pageData.totalPages || 0;
@@ -963,9 +1032,17 @@ const handleSearch = () => {
 // 查看活动详情
 const viewActivityDetails = async (activity: Activity) => {
   viewingActivity.value = activity;
-  // 加载评论和点赞状态
+  // 确保系统管理员（userId=1）可以编辑所有活动
+  if (viewingActivity.value) {
+    const currentUserId = currentUser.value?.id;
+    const isSystemAdmin = currentUserId === 1;
+    const isOrganizer = currentUserId === activity.organizerId;
+    (viewingActivity.value as any).canEdit = isOrganizer || isSystemAdmin;
+  }
+  // 加载评论、点赞状态和报名状态
   await loadComments();
   await loadActivityLikeStatus();
+  await loadParticipationStatus();
 };
 
 // 加载活动点赞状态
@@ -1042,6 +1119,7 @@ const submitComment = async () => {
   try {
     const commentData = {
       activityId: viewingActivity.value.id,
+      userId: currentUser.value?.id,
       content: newCommentContent.value.trim(),
       parentId: replyingToComment.value?.id,
     };
@@ -1099,6 +1177,183 @@ const formatCommentTime = (time?: string) => {
   return date.toLocaleDateString("zh-CN");
 };
 
+// 加载报名状态
+const loadParticipationStatus = async () => {
+  if (!viewingActivity.value || !currentUser.value?.id) {
+    participationStatus.value = null;
+    return;
+  }
+  loadingParticipation.value = true;
+  try {
+    const response = await activityParticipantApi.getParticipation(
+      viewingActivity.value.id,
+      currentUser.value.id
+    );
+    if (response.data) {
+      participationInfo.value = response.data;
+      participationStatus.value = response.data.status;
+    } else {
+      participationStatus.value = null;
+      participationInfo.value = null;
+    }
+  } catch (error: any) {
+    // 如果返回404，说明未报名
+    if (error.response?.status === 404) {
+      participationStatus.value = null;
+      participationInfo.value = null;
+    } else {
+      console.error("加载报名状态失败:", error);
+      participationStatus.value = null;
+    }
+  } finally {
+    loadingParticipation.value = false;
+  }
+};
+
+// 判断是否可以报名
+const canEnroll = computed(() => {
+  if (!viewingActivity.value) return false;
+  const now = new Date();
+  const deadline = viewingActivity.value.enrollmentDeadline
+    ? new Date(viewingActivity.value.enrollmentDeadline)
+    : null;
+
+  // 检查报名截止时间
+  if (deadline && now > deadline) {
+    return false;
+  }
+
+  // 检查活动状态（只有已发布的活动可以报名）
+  if (viewingActivity.value.status !== 1) {
+    return false;
+  }
+
+  // 检查是否已报名
+  if (participationStatus.value !== null) {
+    return false;
+  }
+
+  // 检查人数限制
+  if (viewingActivity.value.maxParticipants) {
+    const current = viewingActivity.value.currentParticipants || 0;
+    if (current >= viewingActivity.value.maxParticipants) {
+      return false;
+    }
+  }
+
+  return true;
+});
+
+// 获取报名提示信息
+const getEnrollmentHint = () => {
+  if (!viewingActivity.value) return "";
+
+  const now = new Date();
+  const deadline = viewingActivity.value.enrollmentDeadline
+    ? new Date(viewingActivity.value.enrollmentDeadline)
+    : null;
+
+  if (deadline && now > deadline) {
+    return "报名已截止";
+  }
+
+  if (viewingActivity.value.status !== 1) {
+    return "活动未发布，无法报名";
+  }
+
+  if (viewingActivity.value.maxParticipants) {
+    const current = viewingActivity.value.currentParticipants || 0;
+    if (current >= viewingActivity.value.maxParticipants) {
+      return "报名人数已满";
+    }
+  }
+
+  return "";
+};
+
+// 报名参加活动
+const handleEnrollActivity = async () => {
+  if (!viewingActivity.value || !currentUser.value?.id) {
+    alert("请先登录");
+    return;
+  }
+
+  if (!confirm("确定要报名参加这个活动吗？")) {
+    return;
+  }
+
+  enrollingActivity.value = true;
+  try {
+    await activityParticipantApi.enrollActivity({
+      activityId: viewingActivity.value.id,
+      userId: currentUser.value.id,
+    });
+    alert("报名成功！" + (viewingActivity.value.needApproval ? "等待审核中..." : ""));
+    // 重新加载报名状态和活动信息
+    await loadParticipationStatus();
+    await fetchActivities();
+  } catch (error: any) {
+    console.error("报名失败:", error);
+    alert(error.response?.data?.message || "报名失败，请重试");
+  } finally {
+    enrollingActivity.value = false;
+  }
+};
+
+// 取消报名
+const handleCancelEnrollment = async () => {
+  if (!viewingActivity.value || !currentUser.value?.id) {
+    return;
+  }
+
+  if (!confirm("确定要取消报名吗？")) {
+    return;
+  }
+
+  enrollingActivity.value = true;
+  try {
+    await activityParticipantApi.cancelEnrollment(
+      viewingActivity.value.id,
+      currentUser.value.id
+    );
+    alert("已取消报名");
+    // 重新加载报名状态和活动信息
+    await loadParticipationStatus();
+    await fetchActivities();
+  } catch (error: any) {
+    console.error("取消报名失败:", error);
+    alert(error.response?.data?.message || "取消报名失败，请重试");
+  } finally {
+    enrollingActivity.value = false;
+  }
+};
+
+// 获取报名状态文本
+const getParticipationStatusText = (status: number | null): string => {
+  if (status === null) return "未报名";
+  const statusMap: Record<number, string> = {
+    0: "待审核",
+    1: "已通过",
+    2: "已拒绝",
+    3: "已参加",
+    4: "未参加",
+  };
+  return statusMap[status] || "未知";
+};
+
+// 获取报名状态类名
+const getParticipationStatusClass = (status: number | null): string => {
+  if (status === null) return "draft";
+  const classMap: Record<number, string> = {
+    0: "pending",
+    1: "approved",
+    2: "rejected",
+    3: "attended",
+    4: "absent",
+  };
+  return classMap[status] || "draft";
+};
+
 // 处理创建活动点击
 const handleCreateClick = () => {
   if (!canManageActivities.value) {
@@ -1111,8 +1366,12 @@ const handleCreateClick = () => {
 
 // 编辑活动
 const editActivity = (activity: Activity) => {
-  if (!canManageActivities.value) {
-    alert("学生无权编辑活动！");
+  const currentUserId = currentUser.value?.id;
+  const isSystemAdmin = currentUserId === 1;
+  const isOrganizer = currentUserId === activity.organizerId;
+  
+  if (!canManageActivities.value && !isSystemAdmin && !isOrganizer) {
+    alert("无权编辑活动！");
     return;
   }
   editingActivity.value = activity;
@@ -1142,8 +1401,13 @@ const cancelActivity = async (activityId: number) => {
 
 // 删除活动
 const deleteActivity = async (activityId: number, activityName: string) => {
-  if (!canManageActivities.value) {
-    alert("学生无权删除活动！");
+  const currentUserId = currentUser.value?.id;
+  const isSystemAdmin = currentUserId === 1;
+  const activity = activities.value.find(a => a.id === activityId);
+  const isOrganizer = activity && currentUserId === activity.organizerId;
+  
+  if (!canManageActivities.value && !isSystemAdmin && !isOrganizer) {
+    alert("无权删除活动！");
     return;
   }
   if (!confirm(`确定要删除活动"${activityName}"吗？此操作不可恢复！`)) return;
@@ -1175,7 +1439,9 @@ const saveActivity = async () => {
       location: activityForm.value.location,
       description: activityForm.value.description,
       maxParticipants: activityForm.value.maxParticipants,
-      organizerId: Number(currentUser.value?.id || Number(localStorage.getItem("userId") || 0)),
+      organizerId: Number(
+        currentUser.value?.id || Number(localStorage.getItem("userId") || 0)
+      ),
     };
     if (editingActivity.value) {
       await activityApi.updateActivity(editingActivity.value.id, activityData);
@@ -1183,13 +1449,9 @@ const saveActivity = async () => {
       await activityApi.createActivity(activityData);
     }
     closeModal();
-    // 先刷新分页信息
+    // 刷新活动列表（按创建时间降序，新活动会在第一页）
+    currentPage.value = 1; // 跳转到第一页查看新创建的活动
     await fetchActivities();
-    // 若是新建活动，按升序排序，新活动会在最后一页，跳转到最后一页再拉取一次
-    if (!editingActivity.value && totalPages.value && totalPages.value > 0) {
-      currentPage.value = totalPages.value;
-      await fetchActivities();
-    }
   } catch (err: any) {
     alert(err.response?.data?.message || "保存活动失败");
   } finally {
@@ -1208,6 +1470,9 @@ const closeModal = () => {
   replyingToComment.value = null;
   activityLiked.value = false;
   activityLikesCount.value = 0;
+  // 清空报名相关数据
+  participationStatus.value = null;
+  participationInfo.value = null;
   activityForm.value = {
     name: "",
     clubId: "",
@@ -2109,5 +2374,77 @@ onMounted(async () => {
 .reply-content .comment-text {
   margin-bottom: 8px;
   font-size: 13px;
+}
+
+/* 活动报名区域样式 */
+.activity-enrollment-section {
+  margin-top: 30px;
+  padding-top: 30px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.loading-enrollment {
+  text-align: center;
+  padding: 20px;
+  color: #9ca3af;
+}
+
+.enrollment-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.enrollment-hint {
+  color: #ef4444;
+  font-size: 14px;
+  margin: 0;
+}
+
+.enrollment-status {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.status-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.enrollment-time,
+.approval-remark {
+  font-size: 14px;
+  color: #6b7280;
+  padding: 8px 12px;
+  background-color: #f9fafb;
+  border-radius: 6px;
+}
+
+.status-badge.pending {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.status-badge.approved {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.status-badge.rejected {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+.status-badge.attended {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
+.status-badge.absent {
+  background-color: #f3f4f6;
+  color: #4b5563;
 }
 </style>

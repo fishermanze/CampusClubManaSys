@@ -39,13 +39,18 @@
             <router-link to="/notifications" class="nav-link">
               <i class="fa fa-bell"></i>
               <span :class="{ hidden: sidebarCollapsed }">通知中心</span>
-              <span class="badge">3</span>
             </router-link>
           </li>
           <li class="nav-item active">
             <router-link to="/profile" class="nav-link">
               <i class="fa fa-user"></i>
               <span :class="{ hidden: sidebarCollapsed }">个人资料</span>
+            </router-link>
+          </li>
+          <li class="nav-item">
+            <router-link to="/ai-assistant" class="nav-link">
+              <i class="fa fa-comments"></i>
+              <span :class="{ hidden: sidebarCollapsed }">AI助手</span>
             </router-link>
           </li>
           <li class="nav-item">
@@ -70,7 +75,7 @@
           >
             <i class="fa fa-bars"></i>
           </button>
-          <h1 class="welcome-text">个人资料</h1>
+          <h1 class="page-title">个人资料</h1>
         </div>
 
         <div class="top-bar-right">
@@ -547,7 +552,7 @@ onMounted(async () => {
   overflow: hidden;
 }
 
-.sidebar.collapsed {
+.sidebar.sidebar-collapsed {
   width: 60px;
 }
 
@@ -744,6 +749,13 @@ onMounted(async () => {
   display: none;
 }
 
+.page-title {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0;
+  color: #1f2937;
+}
+
 .profile-name {
   font-size: 28px;
   font-weight: 700;
@@ -763,6 +775,11 @@ onMounted(async () => {
   grid-template-columns: 1fr 1fr;
   gap: 30px;
   margin-bottom: 30px;
+}
+
+.top-bar-left {
+  display: flex;
+  align-items: center;
 }
 
 .profile-card {

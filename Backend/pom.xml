@@ -28,7 +28,7 @@
         <module>message-service</module>
         <module>club-service</module>
         <module>stats-service</module>
-
+        <module>ai-assistant-service</module>
     </modules>
 
     <properties>

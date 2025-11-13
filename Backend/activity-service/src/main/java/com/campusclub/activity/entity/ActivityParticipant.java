@@ -30,8 +30,7 @@ public class ActivityParticipant {
     @Column(name = "status", nullable = false)
     private Integer status = 0;
 
-    // 报名时间
-    @CreatedDate
+    // 报名时间（手动设置，不使用@CreatedDate避免与createdAt冲突）
     @Column(name = "enrollment_time", nullable = false, updatable = false)
     private LocalDateTime enrollmentTime;
 
@@ -59,9 +58,18 @@ public class ActivityParticipant {
     @Column(name = "enrollment_info", length = 1000)
     private String enrollmentInfo;
 
+    @Version
+    @Column(name = "version", nullable = false)
+    private Long version = 0L;
+
+    // 创建时间
+    @CreatedDate
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
     // 更新时间
     @LastModifiedDate
-    @Column(name = "updated_at")
+    @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
     // 关联到活动
